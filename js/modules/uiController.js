@@ -140,7 +140,7 @@ export default class UIController {
 
         // Add a message to the textarea to indicate drag-and-drop functionality
         const originalPlaceholder = textarea.getAttribute('placeholder') || '';
-        textarea.setAttribute('placeholder', `${originalPlaceholder}\n\nYou can also drag and drop a TXT or CSV file here.`);
+        textarea.setAttribute('placeholder', `${originalPlaceholder}`);
 
         // Also add this functionality to the document body for a larger drop area
         document.body.addEventListener('dragover', (e) => {
