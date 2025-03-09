@@ -361,8 +361,8 @@ export default class UIController {
             detailsContentCell.appendChild(detailsElement);
         }
 
-        // Auto-expand for errors and warnings
-        if (type === 'error' || type === 'warning') {
+        // Auto-expand for errors only, not for warnings
+        if (type === 'error') {
             detailsRow.style.display = 'table-row';
             const detailsToggle = existingRow.querySelector('.details-toggle');
             if (detailsToggle) {
