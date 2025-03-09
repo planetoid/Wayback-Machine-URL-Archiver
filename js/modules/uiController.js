@@ -153,6 +153,7 @@ export default class UIController {
      * Sets the UI to processing state
      */
     setProcessingState() {
+        /*
         this.elements.startButton.style.display = 'none';
         this.elements.stopButton.style.display = 'inline-block';
         this.elements.resultsDiv.style.display = 'block';
@@ -161,6 +162,7 @@ export default class UIController {
         this.elements.progressBar.style.width = '0%';
         this.elements.progressBar.textContent = '0%';
         this.elements.etaDisplay.textContent = 'Estimating...';
+         */
     }
 
     /**
