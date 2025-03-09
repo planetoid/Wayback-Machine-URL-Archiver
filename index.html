@@ -295,22 +295,15 @@
                 const urlText = urlListTextarea.value.trim();
                 
                 if (!urlText) {
-                    addLogEntry('Please enter URLs or upload a file.', 'error');
+                    alert('Please enter URLs or upload a file.');
                     return;
                 }
                 
                 urls = urlText.split('\n').filter(url => url.trim()).map(url => url.trim());
                 
                 if (urls.length === 0) {
-                    addLogEntry('No valid URLs found.', 'error');
+                    alert('No valid URLs found.');
                     return;
-                }
-                
-                // Log API key status
-                if (apiKey) {
-                    addLogEntry('Using provided API key for requests', 'info');
-                } else {
-                    addLogEntry('No API key provided, using public access (rate limits may apply)', 'info');
                 }
                 
                 // Reset UI
@@ -323,23 +316,30 @@
                 startButton.style.display = 'none';
                 stopButton.style.display = 'inline-block';
                 resultsDiv.style.display = 'block';
-                logEntriesDiv.innerHTML = '';
+                const statusTableBody = document.getElementById('statusTableBody');
+                statusTableBody.innerHTML = '';
                 progressContainer.style.display = 'block';
                 progressBar.style.width = '0%';
                 progressBar.textContent = '0%';
                 etaDisplay.textContent = 'Estimating...';
                 
-                addLogEntry(`Starting to process ${urls.length} URLs...`, 'info');
+                // Log API key status
+                if (apiKey) {
+                    console.log('Using provided API key for requests');
+                } else {
+                    console.log('No API key provided, using public access (rate limits may apply)');
+                }
                 
                 try {
                     await processUrls(urls, apiKey);
                     if (shouldStop) {
-                        addLogEntry('Process stopped by user.', 'warning');
+                        alert('Process stopped by user.');
                     } else {
-                        addLogEntry('All URLs have been processed!', 'success');
+                        alert('All URLs have been processed!');
                     }
                 } catch (error) {
-                    addLogEntry(`Error: ${error.message}`, 'error');
+                    console.error(`Error: ${error.message}`);
+                    alert(`Error: ${error.message}`);
                 }
                 
                 // Reset UI
@@ -483,7 +483,7 @@
                     await fetch(`https://web.archive.org/save/${url}`, fetchOptions);
                     
                     // Since we can't check the response with no-cors, we'll do a follow-up check
-                    // Wait a moment for the archiving to potentially complete
+                    // Add a "processing" entry to the table
                     const waitingLogEntry = addLogEntry('Archive request sent', 'info', url, 'Waiting for 5 seconds before verifying...');
                     await new Promise(resolve => setTimeout(resolve, 5000));
                     
@@ -493,14 +493,13 @@
                     
                     for (let attempt = 1; attempt <= 3; attempt++) {
                         const attemptMessage = `Verification attempt ${attempt}/3...`;
-                        if (attempt === 1) {
-                            // Update the details of the waiting log entry for the first attempt
-                            if (waitingLogEntry.detailsDiv) {
-                                waitingLogEntry.detailsDiv.textContent = attemptMessage;
-                            }
-                        } else {
-                            // For subsequent attempts, append to the verification details
-                            verificationDetails += `\n${attemptMessage}`;
+                        
+                        // Update verification details
+                        verificationDetails += (verificationDetails ? '\n' : '') + attemptMessage;
+                        
+                        // Update the details content if possible
+                        if (waitingLogEntry && waitingLogEntry.detailsDiv) {
+                            waitingLogEntry.detailsDiv.innerHTML = `<strong>Archive request sent</strong><div style="margin-top: 8px;">${verificationDetails}</div>`;
                         }
                         
                         const checkResult = await checkIfArchived(url);
@@ -515,89 +514,22 @@
                         }
                     }
                     
-                    // Remove the waiting log entry since we'll add a final status entry
-                    if (waitingLogEntry.entry) {
-                        logEntriesDiv.removeChild(waitingLogEntry.entry);
-                    }
-                    if (waitingLogEntry.detailsDiv) {
-                        logEntriesDiv.removeChild(waitingLogEntry.detailsDiv);
-                    }
-                    
-                    if (verificationSuccess) {
-                        // Success already logged by checkIfArchived
-                    } else {
+                    if (!verificationSuccess) {
                         // Create a manual archive link for the user
                         const archiveUrl = `https://web.archive.org/save/${url}`;
                         verificationDetails += `\n\nArchive request was sent but could not be verified.`;
                         verificationDetails += `\nIt may still be processing - check manually later at: ${archiveUrl}`;
                         
                         addLogEntry('Archive verification failed', 'warning', url, verificationDetails);
-                        
-                        // Create a manual link element
-                        const manualLinkContainer = document.createElement('div');
-                        manualLinkContainer.id = 'manualLinkContainer';
-                        
-                        const linkElement = document.createElement('a');
-                        linkElement.href = archiveUrl;
-                        linkElement.target = '_blank';
-                        linkElement.textContent = 'Try archiving manually';
-                        linkElement.className = 'manual-archive-link';
-                        
-                        manualLinkContainer.appendChild(linkElement);
-                        
-                        // Add the manual link to the last warning's details
-                        const lastWarning = document.querySelector('.log-entry.warning:last-child');
-                        if (lastWarning) {
-                            const nextSibling = lastWarning.nextSibling;
-                            if (nextSibling && nextSibling.classList.contains('log-details')) {
-                                nextSibling.appendChild(manualLinkContainer);
-                                
-                                // Auto-expand this warning
-                                nextSibling.style.display = 'block';
-                                const expandIcon = lastWarning.querySelector('.expand-icon');
-                                if (expandIcon) {
-                                    expandIcon.innerHTML = '▲';
-                                }
-                            }
-                        }
                     }
                 } catch (error) {
                     console.error("Error during archiving:", error);
                     
-                    // Create a manual link for error cases
+                    // Handle CORS errors or other issues
                     const archiveUrl = `https://web.archive.org/save/${url}`;
                     const errorDetails = `CORS issue detected: ${error.message}\nTry archiving manually using the link below.`;
                     
                     addLogEntry('Archive request failed', 'error', url, errorDetails);
-                    
-                    // Create and add the manual archive link
-                    const manualLinkContainer = document.createElement('div');
-                    manualLinkContainer.id = 'manualLinkContainer';
-                    
-                    const linkElement = document.createElement('a');
-                    linkElement.href = archiveUrl;
-                    linkElement.target = '_blank';
-                    linkElement.textContent = 'Archive this URL manually';
-                    linkElement.className = 'manual-archive-link';
-                    linkElement.style.color = '#0066cc';
-                    
-                    manualLinkContainer.appendChild(linkElement);
-                    
-                    // Add the manual link to the last error's details
-                    const lastError = document.querySelector('.log-entry.error:last-child');
-                    if (lastError) {
-                        const nextSibling = lastError.nextSibling;
-                        if (nextSibling && nextSibling.classList.contains('log-details')) {
-                            nextSibling.appendChild(manualLinkContainer);
-                            
-                            // Auto-expand this error
-                            nextSibling.style.display = 'block';
-                            const expandIcon = lastError.querySelector('.expand-icon');
-                            if (expandIcon) {
-                                expandIcon.innerHTML = '▲';
-                            }
-                        }
-                    }
                 }
             }
             
