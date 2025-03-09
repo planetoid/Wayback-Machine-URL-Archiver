@@ -7,63 +7,66 @@
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Wayback Machine URL Archiver</h1>
-        
-        <div>
-            <h3>Step 1: Enter URLs or Upload File</h3>
-            <p>Enter URLs (one per line) or upload a TXT/CSV file:</p>
-            <textarea id="urlList" placeholder="https://example.com&#10;https://another-example.com"></textarea>
-            <p>Or upload a file:</p>
-            <input type="file" id="fileInput" accept=".txt,.csv">
-        </div>
-        
-        <div>
-            <h3>Step 2: Enter Wayback Machine API Key (Optional)</h3>
-            <input type="text" id="apiKey" placeholder="Optional: Your Wayback Machine API Key">
-            <p class="hint" style="font-size: 0.8em; color: #666;">An API key may provide better rate limits, but is not required.</p>
-        </div>
-        
-        <div>
-            <h3>Step 3: Start Archiving</h3>
-            <button id="startButton">Start Archiving</button>
-            <button id="stopButton" style="background-color: #f44336; display: none;">Stop</button>
-        </div>
-        
-        <div class="progress-container" id="progressContainer">
-            <div class="progress-bar" id="progressBar">0%</div>
-            <div class="eta" id="eta"></div>
-        </div>
-        
-        <div id="results">
-            <h3>Archive Results</h3>
-            <table class="status-table" id="archiveStatusTable">
-                <thead>
-                    <tr>
-                        <th style="width: 40px;">No.</th>
-                        <th>URL</th>
-                        <th style="width: 100px;">Status</th>
-                        <th style="width: 110px;">View Archive</th>
-                        <th style="width: 80px;">Details</th>
-                    </tr>
-                </thead>
-                <tbody id="statusTableBody">
-                    <!-- Status rows will be added here dynamically -->
-                </tbody>
-            </table>
-            <div id="logEntries" style="display: none;">
-                <!-- Legacy log entries for compatibility -->
-            </div>
-            <div id="manualLinkContainer" style="display: none;"></div>
-        </div>
+<div class="container">
+    <h1>Wayback Machine URL Archiver</h1>
 
-        <div class="alternate-method">
-            <strong>Alternative Method:</strong> You can also directly use the following format to manually archive a URL:<br>
-            <code>https://web.archive.org/save/YOUR_URL_HERE</code>
-        </div>
+    <div>
+        <h3>Step 1: Enter URLs or Upload File</h3>
+        <p>Enter URLs (one per line) or drop a TXT/CSV file here:</p>
+        <label for="urlList">URL List</label>
+        <textarea id="urlList" placeholder="https://example.com&#10;https://another-example.com"></textarea>
+        <div class="drag-hint">You can directly drag and drop TXT or CSV files into the text box above</div>
+        <p>Or upload a file:</p>
+        <input type="file" id="fileInput" accept=".txt,.csv">
     </div>
 
-    <!-- Module scripts -->
-    <script type="module" src="js/app.js"></script>
+    <div>
+        <h3>Step 2: Enter Wayback Machine API Key (Optional)</h3>
+        <label for="apiKey">API Key</label>
+        <input type="text" id="apiKey" placeholder="Optional: Your Wayback Machine API Key">
+        <p class="hint" style="font-size: 0.8em; color: #666;">An API key may provide better rate limits, but is not required.</p>
+    </div>
+
+    <div>
+        <h3>Step 3: Start Archiving</h3>
+        <button id="startButton">Start Archiving</button>
+        <button id="stopButton" style="background-color: #f44336; display: none;">Stop</button>
+    </div>
+
+    <div class="progress-container" id="progressContainer">
+        <div class="progress-bar" id="progressBar">0%</div>
+        <div class="eta" id="eta"></div>
+    </div>
+
+    <div id="results">
+        <h3>Archive Results</h3>
+        <table class="status-table" id="archiveStatusTable">
+            <thead>
+            <tr>
+                <th style="width: 40px;">No.</th>
+                <th>URL</th>
+                <th style="width: 100px;">Status</th>
+                <th style="width: 110px;">View Archive</th>
+                <th style="width: 80px;">Details</th>
+            </tr>
+            </thead>
+            <tbody id="statusTableBody">
+            <!-- Status rows will be added here dynamically -->
+            </tbody>
+        </table>
+        <div id="logEntries" style="display: none;">
+            <!-- Legacy log entries for compatibility -->
+        </div>
+        <div id="manualLinkContainer" style="display: none;"></div>
+    </div>
+
+    <div class="alternate-method">
+        <strong>Alternative Method:</strong> You can also directly use the following format to manually archive a URL:<br>
+        <code>https://web.archive.org/save/YOUR_URL_HERE</code>
+    </div>
+</div>
+
+<!-- Module scripts -->
+<script type="module" src="js/app.js"></script>
 </body>
 </html>

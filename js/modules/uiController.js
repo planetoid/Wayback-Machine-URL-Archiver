@@ -25,15 +25,18 @@ export default class UIController {
             onStop: null,
             onFileUpload: null
         };
-        
+
         // Status tracker reference
         this.statusTracker = null;
-        
+
         // Initialize UI state
         this.initUI();
-        
+
         // Initialize UI event listeners
         this.initEventListeners();
+
+        // Initialize drag-and-drop functionality
+        this.initDragAndDrop();
     }
 
     /**
@@ -83,6 +86,74 @@ export default class UIController {
 
             if (typeof this.callbacks.onFileUpload === 'function') {
                 this.callbacks.onFileUpload(file);
+            }
+        });
+    }
+
+    /**
+     * Initializes drag-and-drop functionality for the URL textarea
+     */
+    initDragAndDrop() {
+        const textarea = this.elements.urlListTextarea;
+
+        // Add visual cues for drag events
+        textarea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            textarea.style.borderColor = '#4CAF50';
+            textarea.style.backgroundColor = 'rgba(76, 175, 80, 0.1)';
+        });
+
+        textarea.addEventListener('dragleave', () => {
+            textarea.style.borderColor = '';
+            textarea.style.backgroundColor = '';
+        });
+
+        textarea.addEventListener('drop', (e) => {
+            e.preventDefault();
+
+            // Reset styling
+            textarea.style.borderColor = '';
+            textarea.style.backgroundColor = '';
+
+            // Get the file from the drop event
+            const files = e.dataTransfer.files;
+            if (!files || files.length === 0) return;
+
+            const file = files[0];
+
+            // Process the dropped file if we have a callback
+            if (typeof this.callbacks.onFileUpload === 'function') {
+                this.callbacks.onFileUpload(file);
+            }
+        });
+
+        // Add a message to the textarea to indicate drag-and-drop functionality
+        const originalPlaceholder = textarea.getAttribute('placeholder') || '';
+        textarea.setAttribute('placeholder', `${originalPlaceholder}\n\nYou can also drag and drop a TXT or CSV file here.`);
+
+        // Also add this functionality to the document body for a larger drop area
+        document.body.addEventListener('dragover', (e) => {
+            // Only prevent default if the file is being dragged over the body
+            // This allows for normal text selection drag behavior
+            if (e.dataTransfer.types.includes('Files')) {
+                e.preventDefault();
+            }
+        });
+
+        document.body.addEventListener('drop', (e) => {
+            // Only handle file drops
+            if (e.dataTransfer.types.includes('Files')) {
+                e.preventDefault();
+
+                const files = e.dataTransfer.files;
+                if (!files || files.length === 0) return;
+
+                const file = files[0];
+
+                // Process the dropped file if we have a callback
+                if (typeof this.callbacks.onFileUpload === 'function') {
+                    this.callbacks.onFileUpload(file);
+                }
             }
         });
     }
@@ -213,31 +284,31 @@ export default class UIController {
     updateProgress(percentage) {
         // Make sure we have a numeric value
         let validPercentage = Number(percentage);
-        
+
         // Handle NaN or invalid values
         if (isNaN(validPercentage)) {
             console.error('Invalid percentage value:', percentage);
             validPercentage = 0;
         }
-        
+
         // Ensure the progress bar percentage is a valid value between 0 and 100
         validPercentage = Math.max(0, Math.min(100, validPercentage));
-        
+
         // Round to ensure we have a clean integer
         validPercentage = Math.round(validPercentage);
-    
+
         // Force DOM update for the progress bar width
         this.elements.progressBar.style.width = `${validPercentage}%`;
-        
+
         // Update the text content
         this.elements.progressBar.textContent = `${validPercentage}%`;
-    
+
         // Ensure progress bar container is visible when there's actual progress to show
         if (validPercentage > 0 || (this.statusTracker && this.statusTracker.isRunning)) {
             this.elements.progressContainer.style.display = 'block';
         }
 
-    
+
         console.log(`Update progress bar: ${validPercentage}%`);
     }
 
@@ -250,7 +321,7 @@ export default class UIController {
             console.error("ETA display element not found");
             return;
         }
-        
+
         if (timeRemaining > 0) {
             const minutes = Math.floor(timeRemaining / 60000);
             const seconds = Math.floor((timeRemaining % 60000) / 1000);
@@ -378,19 +449,19 @@ export default class UIController {
         statusLabel.textContent = statusText;
         statusCell.innerHTML = '';
         statusCell.appendChild(statusLabel);
-    
+
         // Update "View Archive" cell if we have an archive URL
         if (type === 'success' && statusText === 'Archived' && archiveUrl) {
             const viewCell = existingRow.children[3];
             viewCell.innerHTML = '';
-        
+
             const viewLink = document.createElement('a');
             viewLink.href = archiveUrl;
             viewLink.textContent = 'View';
             viewLink.target = '_blank';
             viewCell.appendChild(viewLink);
         }
-    
+
         // Update details content
         const detailsRow = existingRow.nextElementSibling;
         const detailsContentCell = detailsRow.firstChild;

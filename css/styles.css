@@ -90,7 +90,6 @@ button:disabled {
     margin-right: 10px;
     width: 24px;
     height: 24px;
-    text-align: center;
     line-height: 24px;
 }
 
@@ -189,7 +188,7 @@ button:disabled {
     text-align: center;
     line-height: 20px;
     color: white;
-    width: 0%;
+    width: 0;
 }
 
 .eta {
@@ -273,4 +272,39 @@ a:hover {
         width: 100%;
         margin-bottom: 10px;
     }
+}
+
+/* 為拖放功能增加的 CSS */
+#urlList {
+    border: 2px dashed #ccc;
+    transition: all 0.3s ease;
+    min-height: 100px;
+}
+
+#urlList:hover, #urlList:focus {
+    border-color: #aaa;
+}
+
+#urlList.drag-over {
+    border-color: #4CAF50;
+    background-color: rgba(76, 175, 80, 0.1);
+}
+
+/* 拖放提示文字 */
+.drag-hint {
+    text-align: center;
+    margin-top: 8px;
+    font-size: 0.85em;
+    color: #666;
+}
+
+/* 增加一個動畫來強調拖放區域 */
+@keyframes pulse-border {
+    0% { border-color: #ccc; }
+    50% { border-color: #4CAF50; }
+    100% { border-color: #ccc; }
+}
+
+.pulse-animation {
+    animation: pulse-border 2s infinite;
 }
