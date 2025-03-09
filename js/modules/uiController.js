@@ -311,17 +311,89 @@ export default class UIController {
     }
 
     /**
-     * Sets the UI to processing state
+     * Sets the UI to processing state and preloads all URLs into the results table
+     * @param {Array} urls - List of URLs to be processed
      */
-    setProcessingState() {
+    setProcessingState(urls = []) {
         this.elements.startButton.style.display = 'none';
         this.elements.stopButton.style.display = 'inline-block';
         this.elements.resultsDiv.style.display = 'block';
         this.elements.statusTableBody.innerHTML = '';
-        //this.elements.progressContainer.style.display = 'block';
-        //this.elements.progressBar.style.width = '0%';
-        //this.elements.progressBar.textContent = '0%';
-        //this.elements.etaDisplay.textContent = 'Estimating...';
+
+        // If URLs were provided, preload them all with "Pending" status
+        if (urls && urls.length > 0) {
+            for (let i = 0; i < urls.length; i++) {
+                const url = urls[i];
+                this.addInitialEntry(url, i + 1);
+            }
+        }
+    }
+
+    /**
+     * Adds an initial entry with "Pending" status to the results table
+     * @param {string} url - URL to add
+     * @param {number} rowNumber - Row number for display
+     * @returns {HTMLTableRowElement} - The created table row
+     */
+    addInitialEntry(url, rowNumber) {
+        // Get the status table body
+        const tableBody = this.elements.statusTableBody;
+
+        // Create main row
+        const row = document.createElement('tr');
+        row.dataset.url = url;
+        row.className = 'status-row';
+
+        // Add number cell
+        const numberCell = document.createElement('td');
+        numberCell.textContent = rowNumber;
+        row.appendChild(numberCell);
+
+        // Add URL cell
+        const urlCell = document.createElement('td');
+        urlCell.className = 'url-cell';
+        urlCell.title = url;
+        urlCell.textContent = url;
+        row.appendChild(urlCell);
+
+        // Add status cell with "Pending" status
+        const statusCell = document.createElement('td');
+        const statusLabel = document.createElement('span');
+        statusLabel.className = 'status-label status-pending';
+        statusLabel.textContent = 'Pending';
+        statusCell.appendChild(statusLabel);
+        row.appendChild(statusCell);
+
+        // Add empty view archive cell
+        const viewCell = document.createElement('td');
+        viewCell.textContent = '—';
+        row.appendChild(viewCell);
+
+        // Add placeholder for details cell
+        const detailsCell = document.createElement('td');
+        const detailsToggle = document.createElement('span');
+        detailsToggle.className = 'details-toggle';
+        detailsToggle.textContent = 'Expand';
+        detailsToggle.style.opacity = '0.5'; // Dimmed until there are actual details
+        detailsToggle.style.cursor = 'default';
+        detailsCell.appendChild(detailsToggle);
+        row.appendChild(detailsCell);
+
+        // Create details row (initially hidden)
+        const detailsRow = document.createElement('tr');
+        detailsRow.className = 'details-row';
+
+        const detailsContentCell = document.createElement('td');
+        detailsContentCell.colSpan = 5;
+        detailsContentCell.className = 'details-content';
+        detailsContentCell.textContent = 'Waiting to be processed...';
+        detailsRow.appendChild(detailsContentCell);
+
+        // Add rows to table
+        tableBody.appendChild(row);
+        tableBody.appendChild(detailsRow);
+
+        return row;
     }
 
     /**
@@ -424,7 +496,7 @@ export default class UIController {
     }
 
     /**
-     * Adds a log entry to the status table
+     * Adds a log entry to the status table or updates an existing entry
      * @param {Object} data - Log entry data
      * @returns {Object} - Object containing entry row and details div for updates
      */
@@ -444,16 +516,16 @@ export default class UIController {
         let existingRow = null;
         const rows = tableBody.getElementsByTagName('tr');
         for (let i = 0; i < rows.length; i++) {
-            if (rows[i].dataset.url === url) {
+            if (rows[i].dataset && rows[i].dataset.url === url) {
                 existingRow = rows[i];
                 break;
             }
         }
 
-        // If no existing row, create a new one
+        // If no existing row, create a new one (this shouldn't happen with preloading, but keep as fallback)
         if (!existingRow) {
             // Count current rows for numbering
-            const rowNumber = tableBody.getElementsByTagName('tr').length / 2 + 1;
+            const rowNumber = Math.floor(tableBody.getElementsByTagName('tr').length / 2) + 1;
 
             // Create main row
             const row = document.createElement('tr');
@@ -488,10 +560,10 @@ export default class UIController {
             detailsToggle.textContent = 'Expand';
             detailsToggle.onclick = function() {
                 const detailsRow = row.nextElementSibling;
-                if (detailsRow.style.display === 'table-row') {
+                if (detailsRow && detailsRow.style.display === 'table-row') {
                     detailsRow.style.display = 'none';
                     detailsToggle.textContent = 'Expand';
-                } else {
+                } else if (detailsRow) {
                     detailsRow.style.display = 'table-row';
                     detailsToggle.textContent = 'Collapse';
                 }
@@ -554,8 +626,20 @@ export default class UIController {
             viewCell.appendChild(viewLink);
         }
 
-        // Update details content
+        // Get details row and enable details toggle
         const detailsRow = existingRow.nextElementSibling;
+        if (!detailsRow) {
+            console.error("Details row not found for", url);
+            return { entry: existingRow, detailsDiv: null };
+        }
+
+        // Enable details toggle now that we have content
+        const detailsToggle = existingRow.querySelector('.details-toggle');
+        if (detailsToggle) {
+            detailsToggle.style.opacity = '1';
+            detailsToggle.style.cursor = 'pointer';
+        }
+
         const detailsContentCell = detailsRow.firstChild;
 
         // Add the main message
@@ -581,18 +665,22 @@ export default class UIController {
 
                         if (line.includes('https://web.archive.org/')) {
                             // This line contains a URL - make it clickable
-                            const urlMatch = line.match(/(https:\/\/web\.archive\.org\/\S+)/);
+                            // Improved regex to better match URLs without breaking layout
+                            const urlMatch = line.match(/(https:\/\/web\.archive\.org\/[^\s"]+)/);
                             if (urlMatch) {
                                 const url = urlMatch[1];
+                                // Clean up URL by removing trailing punctuation that might have been caught
+                                const cleanUrl = url.replace(/[.,;:)]$/, '');
                                 const beforeUrl = line.substring(0, line.indexOf(url));
                                 const afterUrl = line.substring(line.indexOf(url) + url.length);
 
                                 lineElement.textContent = beforeUrl;
 
                                 const linkElement = document.createElement('a');
-                                linkElement.href = url;
-                                linkElement.textContent = url;
+                                linkElement.href = cleanUrl;
+                                linkElement.textContent = cleanUrl;
                                 linkElement.target = '_blank';
+                                linkElement.style.wordBreak = 'break-all'; // Allow breaks within long URLs
                                 lineElement.appendChild(linkElement);
 
                                 lineElement.appendChild(document.createTextNode(afterUrl));
@@ -603,7 +691,7 @@ export default class UIController {
                                     viewCell.innerHTML = '';
 
                                     const viewLink = document.createElement('a');
-                                    viewLink.href = url;
+                                    viewLink.href = cleanUrl;
                                     viewLink.textContent = 'View';
                                     viewLink.target = '_blank';
                                     viewCell.appendChild(viewLink);
@@ -621,9 +709,18 @@ export default class UIController {
                     // Regular text without URLs
                     detailsElement.innerText = details;
                 }
+            } else if (Array.isArray(details)) {
+                // Handle array of details (e.g., verification attempts)
+                details.forEach(item => {
+                    const itemElement = document.createElement('div');
+                    itemElement.textContent = item;
+                    detailsElement.appendChild(itemElement);
+                });
             } else if (typeof details === 'object') {
                 // JSON data
                 const pre = document.createElement('pre');
+                pre.style.overflowX = 'auto';
+                pre.style.maxWidth = '100%';
                 pre.textContent = JSON.stringify(details, null, 2);
                 detailsElement.appendChild(pre);
             }
@@ -634,7 +731,6 @@ export default class UIController {
         // Auto-expand for errors only, not for warnings
         if (type === 'error') {
             detailsRow.style.display = 'table-row';
-            const detailsToggle = existingRow.querySelector('.details-toggle');
             if (detailsToggle) {
                 detailsToggle.textContent = 'Collapse';
             }
@@ -653,7 +749,7 @@ export default class UIController {
 
             // Add manual archive link if not already added
             if (!manualLinkContainer.querySelector('.manual-archive-link')) {
-                const archiveUrl = `https://web.archive.org/save/${url}`;
+                const archiveUrl = `https://web.archive.org/save/${encodeURIComponent(url)}`;
                 const linkElement = document.createElement('a');
                 linkElement.href = archiveUrl;
                 linkElement.className = 'manual-archive-link';

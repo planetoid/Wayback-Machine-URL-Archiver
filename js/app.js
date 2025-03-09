@@ -123,6 +123,10 @@ class WaybackArchiver {
             return;
         }
 
+        // Check for duplicates
+        const duplicateCheck = this.urlProcessor.findDuplicates(urls);
+        const uniqueUrls = duplicateCheck.uniqueUrls;
+
         // Set API key if provided
         if (apiKey) {
             this.waybackAPI.setApiKey(apiKey);
@@ -132,20 +136,22 @@ class WaybackArchiver {
         }
 
         // Initialize status tracker with URLs
-        this.statusTracker.initialize(urls);
+        this.statusTracker.initialize(uniqueUrls);
 
-        // Set UI to processing state
-        this.uiController.setProcessingState();
+        // Important: Set UI to processing state and preload all URLs
+        this.uiController.setProcessingState(uniqueUrls);
 
-        // Check for duplicates
-        const duplicateCheck = this.urlProcessor.findDuplicates(urls);
+        // Show message if duplicates were found
         if (duplicateCheck.hasDuplicates) {
-            console.log(`Found ${duplicateCheck.duplicates.length} duplicate URLs that will be processed only once.`);
+            const duplicateCount = duplicateCheck.duplicates.length;
+            const message = `Found ${duplicateCount} duplicate URL${duplicateCount > 1 ? 's' : ''} that will be processed only once.`;
+            console.log(message);
+            this.uiController.showMessage(message, 'info', 5000);
         }
 
         // Process each URL
         try {
-            await this.processUrls(duplicateCheck.uniqueUrls);
+            await this.processUrls(uniqueUrls);
 
             if (this.statusTracker.shouldStop) {
                 this.uiController.showAlert('Process stopped by user.');
@@ -180,10 +186,33 @@ class WaybackArchiver {
      * @param {Array} urls - Array of URLs to process
      */
     async processUrls(urls) {
+        // Get all existing rows
+        const tableBody = this.uiController.elements.statusTableBody;
+        const rows = tableBody.getElementsByTagName('tr');
+
         for (let i = 0; i < urls.length; i++) {
             if (this.statusTracker.shouldStop) break;
 
             const url = urls[i];
+
+            // Highlight the current URL being processed
+            for (let j = 0; j < rows.length; j++) {
+                if (rows[j].dataset && rows[j].dataset.url === url) {
+                    rows[j].classList.add('processing');
+
+                    // Update status to "Processing"
+                    const statusCell = rows[j].children[2];
+                    if (statusCell) {
+                        const statusLabel = document.createElement('span');
+                        statusLabel.className = 'status-label status-info';
+                        statusLabel.textContent = 'Processing';
+                        statusCell.innerHTML = '';
+                        statusCell.appendChild(statusLabel);
+                    }
+
+                    break;
+                }
+            }
 
             try {
                 // First check if the URL is already archived
@@ -343,6 +372,14 @@ class WaybackArchiver {
                     message: 'Error',
                     details: [error.message]
                 });
+            }
+
+            // Remove the 'processing' class from the current row
+            for (let j = 0; j < rows.length; j++) {
+                if (rows[j].dataset && rows[j].dataset.url === url) {
+                    rows[j].classList.remove('processing');
+                    break;
+                }
             }
 
             // Add a small delay between requests to prevent overwhelming the API
