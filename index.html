@@ -205,34 +205,44 @@
             background-color: #4CAF50;
             color: white;
         }
+        
+        /* Fixed language selection CSS */
         .en, .zh {
             display: none;
         }
+        
+        /* When language is English */
         [lang="en"] .en {
-            display: inline-block;
-        }
-        [lang="zh"] .zh {
-            display: inline-block;
-        }
-        /* Fix for multi-element spans */
-        span.en, span.zh {
-            display: none;
+            display: block;
         }
         [lang="en"] span.en {
             display: inline;
         }
+        
+        /* When language is Chinese */
+        [lang="zh"] .zh {
+            display: block;
+        }
         [lang="zh"] span.zh {
             display: inline;
         }
-        /* Fix for block elements */
-        div.en, div.zh, p.en, p.zh, h1.en, h1.zh, h2.en, h2.zh, h3.en, h3.zh {
+
+        [lang="zh"] .en {
             display: none;
         }
-        [lang="en"] div.en, [lang="en"] p.en, [lang="en"] h1.en, [lang="en"] h2.en, [lang="en"] h3.en {
-            display: block;
+        [lang="zh"] span.en {
+            display: none;
         }
-        [lang="zh"] div.zh, [lang="zh"] p.zh, [lang="zh"] h1.zh, [lang="zh"] h2.zh, [lang="zh"] h3.zh {
-            display: block;
+        
+        /* Ensure table headers and cells display correctly */
+        th .en, th .zh, td .en, td .zh {
+            display: none;
+        }
+        [lang="en"] th .en, [lang="en"] td .en {
+            display: inline;
+        }
+        [lang="zh"] th .zh, [lang="zh"] td .zh {
+            display: inline;
         }
     </style>
 </head>
@@ -243,8 +253,10 @@
     </div>
 
     <div class="container">
-        <h1 class="en">Wayback Machine URL Archiver</h1>
-        <h1 class="zh">網頁備份工具</h1>
+        <h1>
+            <span class="en">Wayback Machine URL Archiver</span>
+            <span class="zh">網頁備份工具</span>
+        </h1>
         
         <div>
             <h3 class="en">Step 1: Enter URLs or Upload File</h3>
@@ -508,12 +520,12 @@
                 },
                 "Estimating...": {
                     "en": "Estimating...",
-                    "zh": "估算中..."
+                    "zh": "估計中..."
                 }
             };
             
             // Function to get translation
-            function translate(text, lang = document.body.getAttribute('lang') || 'en') {
+            function translate_old(text, lang = document.body.getAttribute('lang') || 'en') {
                 if (translations[text] && translations[text][lang]) {
                     return translations[text][lang];
                 }
@@ -525,6 +537,38 @@
                     }
                 }
                 
+                return text;
+            }
+
+            function translate(text, lang) {
+                // 確保 lang 參數有值，優先使用傳入的，其次用 body 的 lang 屬性，最後默認為 'en'
+                lang = lang || document.body.getAttribute('lang') || 'en';
+
+                // 直接匹配完整文本
+                if (translations[text] && translations[text][lang]) {
+                    return translations[text][lang];
+                }
+
+                // 處理包含變量的文本 (改進部分匹配邏輯)
+                let translatedText = text;
+                for (const key in translations) {
+                    if (text.includes(key) && translations[key][lang]) {
+                        // 使用全局替換，替換所有匹配項
+                        translatedText = translatedText.replace(new RegExp(key, 'g'), translations[key][lang]);
+                    }
+                }
+
+                // 如果進行了任何替換，返回替換後的文本
+                if (translatedText !== text) {
+                    return translatedText;
+                }
+
+                // 如果還是沒有找到匹配，檢查是否有 fallback 機制
+                // 如果在中文模式但沒有中文翻譯，可以考慮記錄這些缺失的翻譯
+                if (lang === 'zh' && process.env.NODE_ENV === 'development') {
+                    console.warn(`Missing Chinese translation for: "${text}"`);
+                }
+
                 return text;
             }
             
