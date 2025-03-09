@@ -375,9 +375,6 @@ export default class UIController {
         detailsToggle.className = 'details-toggle';
         detailsToggle.textContent = 'Expand';
         detailsToggle.style.opacity = '0.5'; // Dimmed until there are actual details
-        detailsToggle.style.cursor = 'default';
-        detailsCell.appendChild(detailsToggle);
-        row.appendChild(detailsCell);
 
         // Create details row (initially hidden)
         const detailsRow = document.createElement('tr');
@@ -388,6 +385,20 @@ export default class UIController {
         detailsContentCell.className = 'details-content';
         detailsContentCell.textContent = 'Waiting to be processed...';
         detailsRow.appendChild(detailsContentCell);
+
+        // Fix: Define the onclick function properly
+        detailsToggle.onclick = function() {
+            if (detailsRow.style.display === 'table-row') {
+                detailsRow.style.display = 'none';
+                detailsToggle.textContent = 'Expand';
+            } else {
+                detailsRow.style.display = 'table-row';
+                detailsToggle.textContent = 'Collapse';
+            }
+        };
+
+        detailsCell.appendChild(detailsToggle);
+        row.appendChild(detailsCell);
 
         // Add rows to table
         tableBody.appendChild(row);
@@ -514,10 +525,15 @@ export default class UIController {
 
         // Find if we already have an entry for this URL
         let existingRow = null;
+        let existingDetailsRow = null;
         const rows = tableBody.getElementsByTagName('tr');
         for (let i = 0; i < rows.length; i++) {
             if (rows[i].dataset && rows[i].dataset.url === url) {
                 existingRow = rows[i];
+                // The details row should be the next row
+                if (i + 1 < rows.length) {
+                    existingDetailsRow = rows[i + 1];
+                }
                 break;
             }
         }
@@ -553,25 +569,7 @@ export default class UIController {
             viewCell.textContent = '—';
             row.appendChild(viewCell);
 
-            // Add details cell
-            const detailsCell = document.createElement('td');
-            const detailsToggle = document.createElement('span');
-            detailsToggle.className = 'details-toggle';
-            detailsToggle.textContent = 'Expand';
-            detailsToggle.onclick = function() {
-                const detailsRow = row.nextElementSibling;
-                if (detailsRow && detailsRow.style.display === 'table-row') {
-                    detailsRow.style.display = 'none';
-                    detailsToggle.textContent = 'Expand';
-                } else if (detailsRow) {
-                    detailsRow.style.display = 'table-row';
-                    detailsToggle.textContent = 'Collapse';
-                }
-            };
-            detailsCell.appendChild(detailsToggle);
-            row.appendChild(detailsCell);
-
-            // Create details row
+            // Create details row (must be created before the toggle button)
             const detailsRow = document.createElement('tr');
             detailsRow.className = 'details-row';
 
@@ -580,11 +578,50 @@ export default class UIController {
             detailsContentCell.className = 'details-content';
             detailsRow.appendChild(detailsContentCell);
 
+            // Add details cell with toggle
+            const detailsCell = document.createElement('td');
+            const detailsToggle = document.createElement('span');
+            detailsToggle.className = 'details-toggle';
+            detailsToggle.textContent = 'Expand';
+
+            // Important: Proper closure with direct reference to detailsRow
+            detailsToggle.onclick = function() {
+                if (detailsRow.style.display === 'table-row') {
+                    detailsRow.style.display = 'none';
+                    detailsToggle.textContent = 'Expand';
+                } else {
+                    detailsRow.style.display = 'table-row';
+                    detailsToggle.textContent = 'Collapse';
+                }
+            };
+
+            detailsCell.appendChild(detailsToggle);
+            row.appendChild(detailsCell);
+
             // Add rows to table
             tableBody.appendChild(row);
             tableBody.appendChild(detailsRow);
 
             existingRow = row;
+            existingDetailsRow = detailsRow;
+        } else {
+            // Fix the event listener on the existing toggle button
+            const detailsToggle = existingRow.querySelector('.details-toggle');
+            if (detailsToggle && existingDetailsRow) {
+                detailsToggle.style.opacity = '1';
+                detailsToggle.style.cursor = 'pointer';
+
+                // Re-establish the onclick handler with a proper reference
+                detailsToggle.onclick = function() {
+                    if (existingDetailsRow.style.display === 'table-row') {
+                        existingDetailsRow.style.display = 'none';
+                        detailsToggle.textContent = 'Expand';
+                    } else {
+                        existingDetailsRow.style.display = 'table-row';
+                        detailsToggle.textContent = 'Collapse';
+                    }
+                };
+            }
         }
 
         // Update the status cell with current status
@@ -626,21 +663,13 @@ export default class UIController {
             viewCell.appendChild(viewLink);
         }
 
-        // Get details row and enable details toggle
-        const detailsRow = existingRow.nextElementSibling;
-        if (!detailsRow) {
+        // Get details content cell
+        if (!existingDetailsRow) {
             console.error("Details row not found for", url);
             return { entry: existingRow, detailsDiv: null };
         }
 
-        // Enable details toggle now that we have content
-        const detailsToggle = existingRow.querySelector('.details-toggle');
-        if (detailsToggle) {
-            detailsToggle.style.opacity = '1';
-            detailsToggle.style.cursor = 'pointer';
-        }
-
-        const detailsContentCell = detailsRow.firstChild;
+        const detailsContentCell = existingDetailsRow.firstChild;
 
         // Add the main message
         const messageElement = document.createElement('div');
@@ -730,7 +759,8 @@ export default class UIController {
 
         // Auto-expand for errors only, not for warnings
         if (type === 'error') {
-            detailsRow.style.display = 'table-row';
+            existingDetailsRow.style.display = 'table-row';
+            const detailsToggle = existingRow.querySelector('.details-toggle');
             if (detailsToggle) {
                 detailsToggle.textContent = 'Collapse';
             }
