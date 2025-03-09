@@ -102,6 +102,10 @@ class WaybackArchiver {
      * @param {string} apiKey - Optional Wayback Machine API key
      */
     async startArchiving(urlText, apiKey) {
+        // Always reset the UI completely when starting a new archiving process
+        // This ensures any previous progress state is cleared
+        this.uiController.completeReset();
+        
         // Parse URLs from the text
         const urls = this.urlProcessor.parseUrlsFromText(urlText);
         
@@ -150,8 +154,11 @@ class WaybackArchiver {
         //不再呼叫 this.uiController.resetUI()，而是只重置按鈕狀態
         //this.uiController.resetUI();
 
-        this.uiController.elements.startButton.style.display = 'inline-block';
-        this.uiController.elements.stopButton.style.display = 'none';
+        //this.uiController.elements.startButton.style.display = 'inline-block';
+        //this.uiController.elements.stopButton.style.display = 'none';
+
+        // Only reset button states without hiding progress
+        this.uiController.resetUI();
     }
     
     /**

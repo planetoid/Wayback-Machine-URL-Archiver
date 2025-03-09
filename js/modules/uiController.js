@@ -25,9 +25,26 @@ export default class UIController {
             onStop: null,
             onFileUpload: null
         };
-
+        
+        // Initialize UI state
+        this.initUI();
+        
         // Initialize UI event listeners
         this.initEventListeners();
+    }
+
+    /**
+     * Initialize default UI state
+     */
+    initUI() {
+        // Make sure progress container is hidden initially
+        this.elements.progressContainer.style.display = 'none';
+        this.elements.progressBar.style.width = '0%';
+        this.elements.progressBar.textContent = '0%';
+        this.elements.etaDisplay.textContent = '';
+
+        // Make sure results div is hidden initially
+        this.elements.resultsDiv.style.display = 'none';
     }
 
     /**
@@ -122,10 +139,11 @@ export default class UIController {
     resetUI() {
         this.elements.startButton.style.display = 'inline-block';
         this.elements.stopButton.style.display = 'none';
-        this.elements.progressContainer.style.display = 'none';
-        this.elements.progressBar.style.width = '0%';
-        this.elements.progressBar.textContent = '0%';
-        this.elements.etaDisplay.textContent = '';
+        // Do not hide the progress container here to maintain progress visibility after completion
+        //this.elements.progressContainer.style.display = 'none';
+        //this.elements.progressBar.style.width = '0%';
+        //this.elements.progressBar.textContent = '0%';
+        //this.elements.etaDisplay.textContent = '';
     }
 
     /**
@@ -143,12 +161,36 @@ export default class UIController {
     }
 
     /**
+     * Completely resets the UI including hiding progress
+     * Use this when starting a new archiving session
+     */
+    completeReset() {
+        this.elements.startButton.style.display = 'inline-block';
+        this.elements.stopButton.style.display = 'none';
+
+        // Reset progress state and hide
+        this.elements.progressContainer.style.display = 'none';
+        this.elements.progressBar.style.width = '0%';
+        this.elements.progressBar.textContent = '0%';
+        this.elements.etaDisplay.textContent = '';
+    }
+
+    /**
      * Updates the progress bar
      * @param {number} percentage - Progress percentage (0-100)
      */
     updateProgress(percentage) {
-        this.elements.progressBar.style.width = `${percentage}%`;
-        this.elements.progressBar.textContent = `${percentage}%`;
+        // Ensure the progress bar percentage is a valid value
+        const validPercentage = Math.max(0, Math.min(100, percentage));
+    
+        // Update progress bar
+        this.elements.progressBar.style.width = `${validPercentage}%`;
+        this.elements.progressBar.textContent = `${validPercentage}%`;
+    
+        // Ensure progress bar container is visible when updating
+        this.elements.progressContainer.style.display = 'block';
+    
+        console.log(`Update progress bar: ${validPercentage}%`);
     }
 
     /**
