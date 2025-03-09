@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wayback Machine URL Archiver</title>
+    <title>Wayback Machine URL Archiver | 網頁備份工具</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -188,42 +187,86 @@
         a:hover {
             text-decoration: underline;
         }
+        .language-selector {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+        .language-btn {
+            background-color: #e7e7e7;
+            color: black;
+            padding: 6px 12px;
+            margin-left: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .language-btn.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .en, .zh {
+            display: none;
+        }
+        [lang="en"] .en {
+            display: inline-block;
+        }
+        [lang="zh"] .zh {
+            display: inline-block;
+        }
     </style>
 </head>
-<body>
+<body lang="en">
+    <div class="language-selector">
+        <button id="en-btn" class="language-btn active">English</button>
+        <button id="zh-btn" class="language-btn">繁體中文</button>
+    </div>
+
     <div class="container">
-        <h1>Wayback Machine URL Archiver</h1>
-        <div class="warning-box" style="background-color: #fff3cd; color: #856404; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
-            <strong>Note:</strong> Due to browser security restrictions (CORS), direct API requests may not work. The tool will attempt to work around this, but you may need to:
-            <ul>
-                <li>Use the generated manual archive links if automatic archiving fails</li>
-                <li>Consider implementing a server-side proxy for production use</li>
-                <li>Try running this HTML file locally using a Python web server (<code>python -m http.server</code>)</li>
-            </ul>
-        </div>
-        <div class="alternate-method" style="background-color: #d4edda; color: #155724; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
-            <strong>Alternative Method:</strong> You can also directly use the following format to manually archive a URL:<br>
-            <code>https://web.archive.org/save/YOUR_URL_HERE</code>
-        </div>
+        <h1><span class="en">Wayback Machine URL Archiver</span><span class="zh">網頁備份工具</span></h1>
         
         <div>
-            <h3>Step 1: Enter URLs or Upload File</h3>
-            <p>Enter URLs (one per line) or upload a TXT/CSV file:</p>
+            <h3>
+                <span class="en">Step 1: Enter URLs or Upload File</span>
+                <span class="zh">步驟 1: 輸入網址或上傳檔案</span>
+            </h3>
+            <p>
+                <span class="en">Enter URLs (one per line) or upload a TXT/CSV file:</span>
+                <span class="zh">輸入網址（每行一個）或上傳 TXT/CSV 檔案：</span>
+            </p>
             <textarea id="urlList" placeholder="https://example.com&#10;https://another-example.com"></textarea>
-            <p>Or upload a file:</p>
+            <p>
+                <span class="en">Or upload a file:</span>
+                <span class="zh">或上傳檔案：</span>
+            </p>
             <input type="file" id="fileInput" accept=".txt,.csv">
         </div>
         
         <div>
-            <h3>Step 2: Enter Wayback Machine API Key (Optional)</h3>
+            <h3>
+                <span class="en">Step 2: Enter Wayback Machine API Key (Optional)</span>
+                <span class="zh">步驟 2: 輸入 Wayback Machine API 金鑰（選填）</span>
+            </h3>
             <input type="text" id="apiKey" placeholder="Optional: Your Wayback Machine API Key">
-            <p class="hint" style="font-size: 0.8em; color: #666;">An API key may provide better rate limits, but is not required.</p>
+            <p class="hint" style="font-size: 0.8em; color: #666;">
+                <span class="en">An API key may provide better rate limits, but is not required.</span>
+                <span class="zh">使用 API 金鑰可能會提供更好的請求限制，但非必須。</span>
+            </p>
         </div>
         
         <div>
-            <h3>Step 3: Start Archiving</h3>
-            <button id="startButton">Start Archiving</button>
-            <button id="stopButton" style="background-color: #f44336; display: none;">Stop</button>
+            <h3>
+                <span class="en">Step 3: Start Archiving</span>
+                <span class="zh">步驟 3: 開始備份</span>
+            </h3>
+            <button id="startButton">
+                <span class="en">Start Archiving</span>
+                <span class="zh">開始備份</span>
+            </button>
+            <button id="stopButton" style="background-color: #f44336; display: none;">
+                <span class="en">Stop</span>
+                <span class="zh">停止</span>
+            </button>
         </div>
         
         <div class="progress-container" id="progressContainer">
@@ -232,15 +275,33 @@
         </div>
         
         <div id="results">
-            <h3>Archive Results</h3>
+            <h3>
+                <span class="en">Archive Results</span>
+                <span class="zh">備份結果</span>
+            </h3>
             <table class="status-table" id="archiveStatusTable">
                 <thead>
                     <tr>
-                        <th style="width: 40px;">No.</th>
-                        <th>URL</th>
-                        <th style="width: 100px;">Status</th>
-                        <th style="width: 110px;">View Archive</th>
-                        <th style="width: 80px;">Details</th>
+                        <th style="width: 40px;">
+                            <span class="en">No.</span>
+                            <span class="zh">編號</span>
+                        </th>
+                        <th>
+                            <span class="en">URL</span>
+                            <span class="zh">網址</span>
+                        </th>
+                        <th style="width: 100px;">
+                            <span class="en">Status</span>
+                            <span class="zh">狀態</span>
+                        </th>
+                        <th style="width: 110px;">
+                            <span class="en">View Archive</span>
+                            <span class="zh">查看備份</span>
+                        </th>
+                        <th style="width: 80px;">
+                            <span class="en">Details</span>
+                            <span class="zh">詳細資訊</span>
+                        </th>
                     </tr>
                 </thead>
                 <tbody id="statusTableBody">
@@ -252,10 +313,47 @@
             </div>
             <div id="manualLinkContainer" style="display: none;"></div>
         </div>
+
+        <div class="alternate-method" style="background-color: #d4edda; color: #155724; padding: 10px; border-radius: 4px; margin-top: 15px;">
+            <strong>
+                <span class="en">Alternative Method:</span>
+                <span class="zh">替代方法：</span>
+            </strong> 
+            <span class="en">You can also directly use the following format to manually archive a URL:</span>
+            <span class="zh">您也可以直接使用以下格式手動備份網址：</span><br>
+            <code>https://web.archive.org/save/YOUR_URL_HERE</code>
+        </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Language selection
+            const enBtn = document.getElementById('en-btn');
+            const zhBtn = document.getElementById('zh-btn');
+            const body = document.body;
+
+            enBtn.addEventListener('click', function () {
+                body.setAttribute('lang', 'en');
+                enBtn.classList.add('active');
+                zhBtn.classList.remove('active');
+                localStorage.setItem('preferred-language', 'en');
+            });
+
+            zhBtn.addEventListener('click', function () {
+                body.setAttribute('lang', 'zh');
+                zhBtn.classList.add('active');
+                enBtn.classList.remove('active');
+                localStorage.setItem('preferred-language', 'zh');
+            });
+
+            // Load preferred language from localStorage
+            const preferredLanguage = localStorage.getItem('preferred-language') || 'en';
+            if (preferredLanguage === 'zh') {
+                zhBtn.click();
+            } else {
+                enBtn.click();
+            }
+
             const urlListTextarea = document.getElementById('urlList');
             const fileInput = document.getElementById('fileInput');
             const apiKeyInput = document.getElementById('apiKey');
@@ -266,21 +364,165 @@
             const progressContainer = document.getElementById('progressContainer');
             const progressBar = document.getElementById('progressBar');
             const etaDisplay = document.getElementById('eta');
-            
+
             let urls = [];
             let isRunning = false;
             let shouldStop = false;
             let processedCount = 0;
             let startTime = null;
             let avgTimePerUrl = null;
-            
+
+            // Translation dictionary
+            const translations = {
+                "URL already archived": {
+                    "en": "URL already archived",
+                    "zh": "網址已備份"
+                },
+                "Already archived on": {
+                    "en": "Already archived on",
+                    "zh": "已於下列時間備份"
+                },
+                "View archive": {
+                    "en": "View archive",
+                    "zh": "查看備份"
+                },
+                "Archive status check failed": {
+                    "en": "Archive status check failed",
+                    "zh": "備份狀態檢查失敗"
+                },
+                "Could not automatically check archive status. You can manually check at": {
+                    "en": "Could not automatically check archive status. You can manually check at",
+                    "zh": "無法自動檢查備份狀態，您可以手動檢查於"
+                },
+                "Archive request sent": {
+                    "en": "Archive request sent",
+                    "zh": "備份請求已送出"
+                },
+                "Waiting for 5 seconds before verifying...": {
+                    "en": "Waiting for 5 seconds before verifying...",
+                    "zh": "等待 5 秒後進行驗證..."
+                },
+                "Verification attempt": {
+                    "en": "Verification attempt",
+                    "zh": "驗證嘗試"
+                },
+                "Archive verification failed": {
+                    "en": "Archive verification failed",
+                    "zh": "備份驗證失敗"
+                },
+                "Archive request was sent but could not be verified.": {
+                    "en": "Archive request was sent but could not be verified.",
+                    "zh": "備份請求已送出但無法驗證。"
+                },
+                "It may still be processing - check manually later at": {
+                    "en": "It may still be processing - check manually later at",
+                    "zh": "可能仍在處理中 - 稍後可手動檢查於"
+                },
+                "Archive request failed": {
+                    "en": "Archive request failed",
+                    "zh": "備份請求失敗"
+                },
+                "CORS issue detected": {
+                    "en": "CORS issue detected",
+                    "zh": "偵測到 CORS 問題"
+                },
+                "Try archiving manually using the link below.": {
+                    "en": "Try archiving manually using the link below.",
+                    "zh": "請使用下方連結手動備份。"
+                },
+                "Archived": {
+                    "en": "Archived",
+                    "zh": "已備份"
+                },
+                "Warning": {
+                    "en": "Warning",
+                    "zh": "警告"
+                },
+                "Failed": {
+                    "en": "Failed",
+                    "zh": "失敗"
+                },
+                "Processing": {
+                    "en": "Processing",
+                    "zh": "處理中"
+                },
+                "Unknown": {
+                    "en": "Unknown",
+                    "zh": "未知"
+                },
+                "Expand": {
+                    "en": "Expand",
+                    "zh": "展開"
+                },
+                "Collapse": {
+                    "en": "Collapse",
+                    "zh": "收合"
+                },
+                "View": {
+                    "en": "View",
+                    "zh": "查看"
+                },
+                "Try archiving manually": {
+                    "en": "Try archiving manually",
+                    "zh": "嘗試手動備份"
+                },
+                "Stopping the process...": {
+                    "en": "Stopping the process...",
+                    "zh": "正在停止處理..."
+                },
+                "Please enter URLs or upload a file.": {
+                    "en": "Please enter URLs or upload a file.",
+                    "zh": "請輸入網址或上傳檔案。"
+                },
+                "No valid URLs found.": {
+                    "en": "No valid URLs found.",
+                    "zh": "沒有找到有效的網址。"
+                },
+                "Process stopped by user.": {
+                    "en": "Process stopped by user.",
+                    "zh": "使用者已停止處理。"
+                },
+                "All URLs have been processed!": {
+                    "en": "All URLs have been processed!",
+                    "zh": "所有網址已處理完成！"
+                },
+                "Error:": {
+                    "en": "Error:",
+                    "zh": "錯誤："
+                },
+                "Estimated time remaining:": {
+                    "en": "Estimated time remaining:",
+                    "zh": "預估剩餘時間："
+                },
+                "Complete!": {
+                    "en": "Complete!",
+                    "zh": "完成！"
+                }
+            };
+
+            // Function to get translation
+            function translate(text, lang = document.body.getAttribute('lang') || 'en') {
+                if (translations[text] && translations[text][lang]) {
+                    return translations[text][lang];
+                }
+
+                // For strings with variable parts like "Verification attempt 1/3..."
+                for (const key in translations) {
+                    if (text.includes(key)) {
+                        return text.replace(key, translations[key][lang]);
+                    }
+                }
+
+                return text;
+            }
+
             // Listen for file uploads
-            fileInput.addEventListener('change', function(e) {
+            fileInput.addEventListener('change', function (e) {
                 const file = e.target.files[0];
                 if (!file) return;
-                
+
                 const reader = new FileReader();
-                reader.onload = function(e) {
+                reader.onload = function (e) {
                     const content = e.target.result;
                     // For both CSV and TXT, we'll just extract anything that looks like a URL
                     const extractedUrls = content.match(/https?:\/\/[^\s,;"']+/g) || [];
@@ -288,31 +530,31 @@
                 };
                 reader.readAsText(file);
             });
-            
+
             // Start archiving process
-            startButton.addEventListener('click', async function() {
+            startButton.addEventListener('click', async function () {
                 const apiKey = apiKeyInput.value.trim();
                 const urlText = urlListTextarea.value.trim();
-                
+
                 if (!urlText) {
-                    alert('Please enter URLs or upload a file.');
+                    alert(translate('Please enter URLs or upload a file.'));
                     return;
                 }
-                
+
                 urls = urlText.split('\n').filter(url => url.trim()).map(url => url.trim());
-                
+
                 if (urls.length === 0) {
-                    alert('No valid URLs found.');
+                    alert(translate('No valid URLs found.'));
                     return;
                 }
-                
+
                 // Reset UI
                 isRunning = true;
                 shouldStop = false;
                 processedCount = 0;
                 startTime = Date.now();
                 avgTimePerUrl = null;
-                
+
                 startButton.style.display = 'none';
                 stopButton.style.display = 'inline-block';
                 resultsDiv.style.display = 'block';
@@ -321,92 +563,85 @@
                 progressContainer.style.display = 'block';
                 progressBar.style.width = '0%';
                 progressBar.textContent = '0%';
-                etaDisplay.textContent = 'Estimating...';
-                
+                etaDisplay.textContent = translate('Estimating...');
+
                 // Log API key status
                 if (apiKey) {
                     console.log('Using provided API key for requests');
                 } else {
                     console.log('No API key provided, using public access (rate limits may apply)');
                 }
-                
+
                 try {
                     await processUrls(urls, apiKey);
                     if (shouldStop) {
-                        alert('Process stopped by user.');
+                        alert(translate('Process stopped by user.'));
                     } else {
-                        alert('All URLs have been processed!');
+                        alert(translate('All URLs have been processed!'));
                     }
                 } catch (error) {
-                    console.error(`Error: ${error.message}`);
-                    alert(`Error: ${error.message}`);
+                    console.error(`${translate('Error:')} ${error.message}`);
+                    alert(`${translate('Error:')} ${error.message}`);
                 }
-                
+
                 // Reset UI
                 isRunning = false;
                 startButton.style.display = 'inline-block';
                 stopButton.style.display = 'none';
             });
-            
+
             // Stop the archiving process
-            stopButton.addEventListener('click', function() {
+            stopButton.addEventListener('click', function () {
                 shouldStop = true;
-                addLogEntry('Stopping the process...', 'warning');
+                addLogEntry(translate('Stopping the process...'), 'warning');
             });
-            
+
             // Process all URLs
             async function processUrls(urls, apiKey) {
                 for (let i = 0; i < urls.length; i++) {
                     if (shouldStop) break;
-                    
+
                     const url = urls[i];
-                    
+
                     try {
-                        // First check if the URL is already archived
-                        const isArchived = await checkIfArchived(url);
-                        
-                        if (isArchived) {
-                            addLogEntry(`${url} is already archived, skipping.`, 'info');
-                        } else {
-                            // If not archived, request archiving
-                            const result = await archiveUrl(url, apiKey);
-                            addLogEntry(`${url} - ${result}`, 'success');
-                        }
+                        // First check if the URL is already archived, then archive if needed
+                        await archiveUrl(url, apiKey);
                     } catch (error) {
-                        addLogEntry(`Error processing ${url}: ${error.message}`, 'error');
+                        console.error(`Error processing ${url}:`, error);
+                        // Error handling is done inside archiveUrl
                     }
-                    
+
                     // Update progress
                     processedCount++;
                     const progress = Math.round((processedCount / urls.length) * 100);
                     progressBar.style.width = `${progress}%`;
                     progressBar.textContent = `${progress}%`;
-                    
+
                     // Update ETA
                     const elapsedTime = Date.now() - startTime;
                     const timePerUrl = elapsedTime / processedCount;
-                    
+
                     // Use a weighted average for more stable ETA
-                    avgTimePerUrl = avgTimePerUrl === null 
-                        ? timePerUrl 
+                    avgTimePerUrl = avgTimePerUrl === null
+                        ? timePerUrl
                         : avgTimePerUrl * 0.7 + timePerUrl * 0.3;
-                    
+
                     const remainingUrls = urls.length - processedCount;
                     const estimatedTimeRemaining = avgTimePerUrl * remainingUrls;
-                    
+
                     if (remainingUrls > 0) {
                         const minutes = Math.floor(estimatedTimeRemaining / 60000);
                         const seconds = Math.floor((estimatedTimeRemaining % 60000) / 1000);
-                        etaDisplay.textContent = `Estimated time remaining: ${minutes}m ${seconds}s`;
+                        etaDisplay.textContent = `${translate('Estimated time remaining:')} ${minutes}m ${seconds}s`;
                     } else {
-                        etaDisplay.textContent = 'Complete!';
+                        etaDisplay.textContent = translate('Complete!');
                     }
-                    
+
                     // Add a small delay to prevent overwhelming the API
                     await new Promise(resolve => setTimeout(resolve, 1000));
                 }
             }
-            
+
             // Check if a URL is already archived
             async function checkIfArchived(url) {
                 try {
@@ -415,20 +650,20 @@
                     if (!response.ok) {
                         throw new Error(`HTTP error ${response.status}`);
                     }
-                    
+
                     const data = await response.json();
                     console.log("Archive check response:", data);
-                    
-                    const isArchived = data && 
-                                     data.archived_snapshots && 
-                                     data.archived_snapshots.closest && 
-                                     data.archived_snapshots.closest.available === true;
-                    
+
+                    const isArchived = data &&
+                        data.archived_snapshots &&
+                        data.archived_snapshots.closest &&
+                        data.archived_snapshots.closest.available === true;
+
                     if (isArchived) {
                         // Extract archive URL and date
                         const archiveUrl = data.archived_snapshots.closest.url;
                         const timestamp = data.archived_snapshots.closest.timestamp;
-                        
+
                         // Format the timestamp (YYYYMMDDHHMMSS) to a readable date
                         const year = timestamp.slice(0, 4);
                         const month = timestamp.slice(4, 6);
@@ -436,114 +671,113 @@
                         const hour = timestamp.slice(8, 10);
                         const minute = timestamp.slice(10, 12);
                         const second = timestamp.slice(12, 14);
-                        
+
                         const formattedDate = `${year}-${month}-${day} ${hour}:${minute}:${second}`;
-                        
+
                         // Add an entry with the URL as the main text and the details in the expandable area
-                        const details = `Already archived on ${formattedDate}\nView archive: ${archiveUrl}`;
-                        addLogEntry('URL already archived', 'success', url, details);
+                        const details = `${translate('Already archived on')} ${formattedDate}\n${translate('View archive')}: ${archiveUrl}`;
+                        addLogEntry(translate('URL already archived'), 'success', url, details);
                     }
-                    
+
                     return isArchived;
                 } catch (error) {
                     console.error("Error checking archive status:", error);
                     // If there's still a CORS issue, provide an alternative way to check
                     const checkUrl = `https://web.archive.org/web/*/${url}`;
-                    const details = `Could not automatically check archive status. You can manually check at: ${checkUrl}`;
-                    addLogEntry('Archive status check failed', 'warning', url, details);
-                    
+                    const details = `${translate('Could not automatically check archive status. You can manually check at')}: ${checkUrl}`;
+                    addLogEntry(translate('Archive status check failed'), 'warning', url, details);
+
                     // Return false to proceed with archiving attempt
                     return false;
                 }
             }
-            
+
             // Archive a URL using the Wayback Machine API (CORS-friendly approach)
             async function archiveUrl(url, apiKey) {
                 try {
-                    // First, double-check if it's already archived (with better logging)
+                    // First, check if it's already archived
                     const isAlreadyArchived = await checkIfArchived(url);
                     if (isAlreadyArchived) {
                         return;
                     }
-                    
+
                     // Prepare fetch options
                     const fetchOptions = {
                         method: 'GET',
                         mode: 'no-cors'
                     };
-                    
+
                     // Add authorization header if API key is provided
                     if (apiKey) {
                         fetchOptions.headers = {
                             'Authorization': `LOW ${apiKey}`
                         };
                     }
-                    
-                    // Option 1: Use no-cors mode (this will make the request but won't give access to the response details)
+
+                    // Use no-cors mode for the request
                     await fetch(`https://web.archive.org/save/${url}`, fetchOptions);
-                    
-                    // Since we can't check the response with no-cors, we'll do a follow-up check
+
                     // Add a "processing" entry to the table
-                    const waitingLogEntry = addLogEntry('Archive request sent', 'info', url, 'Waiting for 5 seconds before verifying...');
+                    const waitingLogEntry = addLogEntry(translate('Archive request sent'), 'info', url, translate('Waiting for 5 seconds before verifying...'));
                     await new Promise(resolve => setTimeout(resolve, 5000));
-                    
+
                     // Check if it was archived (with retries)
                     let verificationSuccess = false;
                     let verificationDetails = '';
-                    
+
                     for (let attempt = 1; attempt <= 3; attempt++) {
-                        const attemptMessage = `Verification attempt ${attempt}/3...`;
-                        
+                        const attemptMessage = `${translate('Verification attempt')} ${attempt}/3...`;
+
                         // Update verification details
                         verificationDetails += (verificationDetails ? '\n' : '') + attemptMessage;
-                        
+
                         // Update the details content if possible
                         if (waitingLogEntry && waitingLogEntry.detailsDiv) {
-                            waitingLogEntry.detailsDiv.innerHTML = `<strong>Archive request sent</strong><div style="margin-top: 8px;">${verificationDetails}</div>`;
+                            waitingLogEntry.detailsDiv.innerHTML = `<strong>${translate('Archive request sent')}</strong><div style="margin-top: 8px;">${verificationDetails}</div>`;
                         }
-                        
+
                         const checkResult = await checkIfArchived(url);
                         if (checkResult) {
                             verificationSuccess = true;
                             break;
                         }
-                        
+
                         // If not found and we have more attempts, wait and try again
                         if (attempt < 3) {
                             await new Promise(resolve => setTimeout(resolve, 2000));
                         }
                     }
-                    
+
                     if (!verificationSuccess) {
                         // Create a manual archive link for the user
                         const archiveUrl = `https://web.archive.org/save/${url}`;
-                        verificationDetails += `\n\nArchive request was sent but could not be verified.`;
-                        verificationDetails += `\nIt may still be processing - check manually later at: ${archiveUrl}`;
-                        
-                        addLogEntry('Archive verification failed', 'warning', url, verificationDetails);
+                        verificationDetails += `\n\n${translate('Archive request was sent but could not be verified.')}`;
+                        verificationDetails += `\n${translate('It may still be processing - check manually later at')}: ${archiveUrl}`;
+
+                        addLogEntry(translate('Archive verification failed'), 'warning', url, verificationDetails);
                     }
                 } catch (error) {
                     console.error("Error during archiving:", error);
-                    
+
                     // Handle CORS errors or other issues
                     const archiveUrl = `https://web.archive.org/save/${url}`;
-                    const errorDetails = `CORS issue detected: ${error.message}\nTry archiving manually using the link below.`;
-                    
-                    addLogEntry('Archive request failed', 'error', url, errorDetails);
+                    const errorDetails = `${translate('CORS issue detected')}: ${error.message}\n${translate('Try archiving manually using the link below.')}`;
+
+                    addLogEntry(translate('Archive request failed'), 'error', url, errorDetails);
                 }
             }
-            
+
             // Add a log entry to the results table
             function addLogEntry(message, type, url = null, details = null) {
                 // Get the status table body
                 const tableBody = document.getElementById('statusTableBody');
-                
+
                 // If this is a system message (no URL), handle differently
                 if (!url) {
                     console.log(`[${type.toUpperCase()}] ${message}`);
-                    return { entry: null, detailsDiv: null };
+                    return {entry: null, detailsDiv: null};
                 }
-                
+
                 // Find if we already have an entry for this URL
                 let existingRow = null;
                 const rows = tableBody.getElementsByTagName('tr');
@@ -553,221 +787,175 @@
                         break;
                     }
                 }
-                
+
                 // If no existing row, create a new one
                 if (!existingRow) {
                     // Count current rows for numbering
                     const rowNumber = tableBody.getElementsByTagName('tr').length / 2 + 1;
-                    
+
                     // Create main row
                     const row = document.createElement('tr');
                     row.dataset.url = url;
                     row.className = 'status-row';
-                    
+
                     // Add number cell
                     const numberCell = document.createElement('td');
                     numberCell.textContent = rowNumber;
                     row.appendChild(numberCell);
-                    
+
                     // Add URL cell
-                    const urlCell = document.createElement('td');
-                    urlCell.className = 'url-cell';
-                    urlCell.title = url;
-                    urlCell.textContent = url;
-                    row.appendChild(urlCell);
-                    
-                    // Add status cell
-                    const statusCell = document.createElement('td');
-                    row.appendChild(statusCell);
-                    
-                    // Add view archive cell
-                    const viewCell = document.createElement('td');
-                    viewCell.textContent = '—';
-                    row.appendChild(viewCell);
-                    
-                    // Add details cell
-                    const detailsCell = document.createElement('td');
-                    const detailsToggle = document.createElement('span');
-                    detailsToggle.className = 'details-toggle';
-                    detailsToggle.textContent = 'Expand';
-                    detailsToggle.onclick = function() {
-                        const detailsRow = row.nextElementSibling;
-                        if (detailsRow.style.display === 'table-row') {
-                            detailsRow.style.display = 'none';
-                            detailsToggle.textContent = 'Expand';
-                        } else {
-                            detailsRow.style.display = 'table-row';
-                            detailsToggle.textContent = 'Collapse';
-                        }
-                    };
-                    detailsCell.appendChild(detailsToggle);
-                    row.appendChild(detailsCell);
-                    
-                    // Create details row
-                    const detailsRow = document.createElement('tr');
-                    detailsRow.className = 'details-row';
-                    
-                    const detailsContentCell = document.createElement('td');
-                    detailsContentCell.colSpan = 5;
-                    detailsContentCell.className = 'details-content';
-                    detailsRow.appendChild(detailsContentCell);
-                    
-                    // Add rows to table
-                    tableBody.appendChild(row);
-                    tableBody.appendChild(detailsRow);
-                    
-                    existingRow = row;
-                }
-                
-                // Update the status cell with current status
-                const statusCell = existingRow.children[2];
-                const statusLabel = document.createElement('span');
-                statusLabel.className = `status-label status-${type}`;
-                
-                let statusText = '';
-                switch(type) {
-                    case 'success':
-                        statusText = 'Archived';
-                        break;
-                    case 'warning':
-                        statusText = 'Warning';
-                        break;
-                    case 'error':
-                        statusText = 'Failed';
-                        break;
-                    case 'info':
-                        statusText = 'Processing';
-                        break;
-                    default:
-                        statusText = 'Unknown';
-                }
-                
-                statusLabel.textContent = statusText;
-                statusCell.innerHTML = '';
-                statusCell.appendChild(statusLabel);
-                
-                // Update details content
-                const detailsRow = existingRow.nextElementSibling;
-                const detailsContentCell = detailsRow.firstChild;
-                
-                // Add the main message
-                const messageElement = document.createElement('div');
-                messageElement.innerHTML = `<strong>${message}</strong>`;
-                
-                // Clear previous details when updating status
-                detailsContentCell.innerHTML = '';
-                detailsContentCell.appendChild(messageElement);
-                
-                // Add any additional details
-                if (details) {
-                    const detailsElement = document.createElement('div');
-                    detailsElement.style.marginTop = '8px';
-                    
-                    if (typeof details === 'string') {
-                        // Check for URLs and make them clickable
-                        if (details.includes('https://web.archive.org/')) {
-                            // Split by newlines first to handle multiple lines
-                            const lines = details.split('\n');
-                            for (const line of lines) {
-                                const lineElement = document.createElement('div');
-                                
-                                if (line.includes('https://web.archive.org/')) {
-                                    // This line contains a URL - make it clickable
-                                    const urlMatch = line.match(/(https:\/\/web\.archive\.org\/[^\s]+)/);
-                                    if (urlMatch) {
-                                        const url = urlMatch[1];
-                                        const beforeUrl = line.substring(0, line.indexOf(url));
-                                        const afterUrl = line.substring(line.indexOf(url) + url.length);
-                                        
-                                        lineElement.textContent = beforeUrl;
-                                        
-                                        const linkElement = document.createElement('a');
-                                        linkElement.href = url;
-                                        linkElement.textContent = url;
-                                        linkElement.target = '_blank';
-                                        lineElement.appendChild(linkElement);
-                                        
-                                        lineElement.appendChild(document.createTextNode(afterUrl));
-                                        
-                                        // If this contains the archive URL, also update the "View Archive" cell
-                                        if (line.includes('View archive') || line.includes('Already archived')) {
-                                            const viewCell = existingRow.children[3];
-                                            viewCell.innerHTML = '';
-                                            
-                                            const viewLink = document.createElement('a');
-                                            viewLink.href = url;
-                                            viewLink.textContent = 'View';
-                                            viewLink.target = '_blank';
-                                            viewCell.appendChild(viewLink);
+
+                    // Update the status cell with current status
+                    const statusCell = existingRow.children[2];
+                    const statusLabel = document.createElement('span');
+                    statusLabel.className = `status-label status-${type}`;
+
+                    let statusText = '';
+                    switch (type) {
+                        case 'success':
+                            statusText = 'Archived';
+                            break;
+                        case 'warning':
+                            statusText = 'Warning';
+                            break;
+                        case 'error':
+                            statusText = 'Failed';
+                            break;
+                        case 'info':
+                            statusText = 'Processing';
+                            break;
+                        default:
+                            statusText = 'Unknown';
+                    }
+
+                    statusLabel.textContent = statusText;
+                    statusCell.innerHTML = '';
+                    statusCell.appendChild(statusLabel);
+
+                    // Update details content
+                    const detailsRow = existingRow.nextElementSibling;
+                    const detailsContentCell = detailsRow.firstChild;
+
+                    // Add the main message
+                    const messageElement = document.createElement('div');
+                    messageElement.innerHTML = `<strong>${message}</strong>`;
+
+                    // Clear previous details when updating status
+                    detailsContentCell.innerHTML = '';
+                    detailsContentCell.appendChild(messageElement);
+
+                    // Add any additional details
+                    if (details) {
+                        const detailsElement = document.createElement('div');
+                        detailsElement.style.marginTop = '8px';
+
+                        if (typeof details === 'string') {
+                            // Check for URLs and make them clickable
+                            if (details.includes('https://web.archive.org/')) {
+                                // Split by newlines first to handle multiple lines
+                                const lines = details.split('\n');
+                                for (const line of lines) {
+                                    const lineElement = document.createElement('div');
+
+                                    if (line.includes('https://web.archive.org/')) {
+                                        // This line contains a URL - make it clickable
+                                        const urlMatch = line.match(/(https:\/\/web\.archive\.org\/[^\s]+)/);
+                                        if (urlMatch) {
+                                            const url = urlMatch[1];
+                                            const beforeUrl = line.substring(0, line.indexOf(url));
+                                            const afterUrl = line.substring(line.indexOf(url) + url.length);
+
+                                            lineElement.textContent = beforeUrl;
+
+                                            const linkElement = document.createElement('a');
+                                            linkElement.href = url;
+                                            linkElement.textContent = url;
+                                            linkElement.target = '_blank';
+                                            lineElement.appendChild(linkElement);
+
+                                            lineElement.appendChild(document.createTextNode(afterUrl));
+
+                                            // If this contains the archive URL, also update the "View Archive" cell
+                                            if (line.includes('View archive') || line.includes('Already archived')) {
+                                                const viewCell = existingRow.children[3];
+                                                viewCell.innerHTML = '';
+
+                                                const viewLink = document.createElement('a');
+                                                viewLink.href = url;
+                                                viewLink.textContent = 'View';
+                                                viewLink.target = '_blank';
+                                                viewCell.appendChild(viewLink);
+                                            }
+                                        } else {
+                                            lineElement.textContent = line;
                                         }
                                     } else {
                                         lineElement.textContent = line;
                                     }
-                                } else {
-                                    lineElement.textContent = line;
+
+                                    detailsElement.appendChild(lineElement);
                                 }
-                                
-                                detailsElement.appendChild(lineElement);
+                            } else {
+                                // Regular text without URLs
+                                detailsElement.innerText = details;
                             }
-                        } else {
-                            // Regular text without URLs
-                            detailsElement.innerText = details;
+                        } else if (typeof details === 'object') {
+                            // JSON data
+                            const pre = document.createElement('pre');
+                            pre.textContent = JSON.stringify(details, null, 2);
+                            detailsElement.appendChild(pre);
                         }
-                    } else if (typeof details === 'object') {
-                        // JSON data
-                        const pre = document.createElement('pre');
-                        pre.textContent = JSON.stringify(details, null, 2);
-                        detailsElement.appendChild(pre);
+
+                        detailsContentCell.appendChild(detailsElement);
                     }
-                    
-                    detailsContentCell.appendChild(detailsElement);
+
+                    // Auto-expand for errors and warnings
+                    if (type === 'error' || type === 'warning') {
+                        detailsRow.style.display = 'table-row';
+                        const detailsToggle = existingRow.querySelector('.details-toggle');
+                        if (detailsToggle) {
+                            detailsToggle.textContent = 'Collapse';
+                        }
+                    }
+
+                    // For manual archive links in error/warning cases
+                    if (type === 'error' || type === 'warning') {
+                        // Create a container for manual links if needed
+                        let manualLinkContainer = detailsContentCell.querySelector('.manual-link-container');
+                        if (!manualLinkContainer) {
+                            manualLinkContainer = document.createElement('div');
+                            manualLinkContainer.className = 'manual-link-container';
+                            manualLinkContainer.style.marginTop = '10px';
+                            detailsContentCell.appendChild(manualLinkContainer);
+                        }
+
+                        // Add manual archive link if not already added
+                        if (!manualLinkContainer.querySelector('.manual-archive-link')) {
+                            const archiveUrl = `https://web.archive.org/save/${url}`;
+                            const linkElement = document.createElement('a');
+                            linkElement.href = archiveUrl;
+                            linkElement.className = 'manual-archive-link';
+                            linkElement.textContent = 'Try archiving manually';
+                            linkElement.target = '_blank';
+                            linkElement.style.display = 'inline-block';
+                            linkElement.style.marginTop = '5px';
+                            linkElement.style.color = '#0066cc';
+                            manualLinkContainer.appendChild(linkElement);
+                        }
+                    }
+
+                    // Log to console as well
+                    console.log(`[${type.toUpperCase()}] ${url}: ${message}`);
+
+                    // Return elements that might be needed for updates
+                    return {
+                        entry: existingRow,
+                        detailsDiv: detailsContentCell
+                    };
                 }
-                
-                // Auto-expand for errors and warnings
-                if (type === 'error' || type === 'warning') {
-                    detailsRow.style.display = 'table-row';
-                    const detailsToggle = existingRow.querySelector('.details-toggle');
-                    if (detailsToggle) {
-                        detailsToggle.textContent = 'Collapse';
-                    }
-                }
-                
-                // For manual archive links in error/warning cases
-                if (type === 'error' || type === 'warning') {
-                    // Create a container for manual links if needed
-                    let manualLinkContainer = detailsContentCell.querySelector('.manual-link-container');
-                    if (!manualLinkContainer) {
-                        manualLinkContainer = document.createElement('div');
-                        manualLinkContainer.className = 'manual-link-container';
-                        manualLinkContainer.style.marginTop = '10px';
-                        detailsContentCell.appendChild(manualLinkContainer);
-                    }
-                    
-                    // Add manual archive link if not already added
-                    if (!manualLinkContainer.querySelector('.manual-archive-link')) {
-                        const archiveUrl = `https://web.archive.org/save/${url}`;
-                        const linkElement = document.createElement('a');
-                        linkElement.href = archiveUrl;
-                        linkElement.className = 'manual-archive-link';
-                        linkElement.textContent = 'Try archiving manually';
-                        linkElement.target = '_blank';
-                        linkElement.style.display = 'inline-block';
-                        linkElement.style.marginTop = '5px';
-                        linkElement.style.color = '#0066cc';
-                        manualLinkContainer.appendChild(linkElement);
-                    }
-                }
-                
-                // Log to console as well
-                console.log(`[${type.toUpperCase()}] ${url}: ${message}`);
-                
-                // Return elements that might be needed for updates
-                return { 
-                    entry: existingRow, 
-                    detailsDiv: detailsContentCell
-                };
             }
-        });
+        })
+        
     </script>
 </body>
 </html>
