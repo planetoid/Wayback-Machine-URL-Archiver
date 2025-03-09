@@ -116,8 +116,9 @@
         </div>
         
         <div>
-            <h3>Step 2: Enter Wayback Machine API Key</h3>
-            <input type="text" id="apiKey" placeholder="Your Wayback Machine API Key">
+            <h3>Step 2: Enter Wayback Machine API Key (Optional)</h3>
+            <input type="text" id="apiKey" placeholder="Optional: Your Wayback Machine API Key">
+            <p class="hint" style="font-size: 0.8em; color: #666;">An API key may provide better rate limits, but is not required.</p>
         </div>
         
         <div>
@@ -178,11 +179,6 @@
                 const apiKey = apiKeyInput.value.trim();
                 const urlText = urlListTextarea.value.trim();
                 
-                if (!apiKey) {
-                    addLogEntry('Please enter your Wayback Machine API key.', 'error');
-                    return;
-                }
-                
                 if (!urlText) {
                     addLogEntry('Please enter URLs or upload a file.', 'error');
                     return;
@@ -193,6 +189,13 @@
                 if (urls.length === 0) {
                     addLogEntry('No valid URLs found.', 'error');
                     return;
+                }
+                
+                // Log API key status
+                if (apiKey) {
+                    addLogEntry('Using provided API key for requests', 'info');
+                } else {
+                    addLogEntry('No API key provided, using public access (rate limits may apply)', 'info');
                 }
                 
                 // Reset UI
@@ -344,15 +347,22 @@
                         return 'URL was already archived (see info above)';
                     }
                     
+                    // Prepare fetch options
+                    const fetchOptions = {
+                        method: 'GET',
+                        mode: 'no-cors'
+                    };
+                    
+                    // Add authorization header if API key is provided
+                    if (apiKey) {
+                        fetchOptions.headers = {
+                            'Authorization': `LOW ${apiKey}`
+                        };
+                    }
+                    
                     // Option 1: Use no-cors mode (this will make the request but won't give access to the response details)
                     // This is a "fire and forget" approach
-                    await fetch(`https://web.archive.org/save/${url}`, {
-                        method: 'GET',
-                        mode: 'no-cors',
-                        headers: {
-                            'Authorization': `LOW ${apiKey}`
-                        }
-                    });
+                    await fetch(`https://web.archive.org/save/${url}`, fetchOptions);
                     
                     // Create a manual archiving link anyway (as a fallback)
                     const archiveUrl = `https://web.archive.org/save/${url}`;
