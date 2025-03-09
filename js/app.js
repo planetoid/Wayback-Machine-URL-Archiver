@@ -180,7 +180,7 @@ class WaybackArchiver {
                         message: 'URL already archived',
                         type: 'success',
                         url: url,
-                        details: `Already archived on ${archiveInfo.formattedDate}\nView archive: ${archiveInfo.archiveUrl}`
+                        details: `Already archived on ${archiveInfo.formattedDate}\nView archive: ${archiveInfo.archiveUrl}`,
                         archiveUrl: archiveInfo.archiveUrl
                     });
                     
@@ -217,7 +217,7 @@ class WaybackArchiver {
                             message: 'Successfully archived',
                             type: 'success',
                             url: url,
-                            details: `Archived on ${verificationResult.archiveInfo.formattedDate}\nView, archive: ${verificationResult.archiveInfo.archiveUrl}`
+                            details: `Archived on ${verificationResult.archiveInfo.formattedDate}\nView, archive: ${verificationResult.archiveInfo.archiveUrl}`,
                             archiveUrl: verificationResult.archiveInfo.archiveUrl // 傳遞存檔URL給UI控制器
                         });
                         
