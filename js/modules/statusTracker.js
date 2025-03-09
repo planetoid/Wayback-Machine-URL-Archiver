@@ -35,6 +35,11 @@ export default class StatusTracker {
         this.startTime = Date.now();
         this.isRunning = true;
         this.shouldStop = false;
+        
+        // Immediately call progress update (0%) when initializing
+        if (typeof this.onProgressUpdate === 'function') {
+            this.onProgressUpdate(0, 0, this.urls.length);
+        }
     }
     
     /**
@@ -58,12 +63,15 @@ export default class StatusTracker {
         const progress = this.getProgressPercentage();
         
         // Update ETA
-        this.updateEta();
+        const estimatedTimeRemaining = this.updateEta();
         
-        // Call progress callback if defined
+        // Ensure progress callback is called on every update
         if (typeof this.onProgressUpdate === 'function') {
             this.onProgressUpdate(progress, this.processedCount, this.urls.length);
         }
+        
+        // Log progress for debugging
+        console.log(`Progress update: ${progress}%, processed ${this.processedCount}/${this.urls.length}`);
     }
     
     /**
@@ -95,9 +103,10 @@ export default class StatusTracker {
     
     /**
      * Updates the estimated time remaining
+     * @returns {number} - Estimated time remaining in milliseconds
      */
     updateEta() {
-        if (this.processedCount === 0) return;
+        if (this.processedCount === 0) return 0;
         
         const elapsedTime = Date.now() - this.startTime;
         const timePerUrl = elapsedTime / this.processedCount;
@@ -140,6 +149,13 @@ export default class StatusTracker {
     stop() {
         this.shouldStop = true;
         this.isRunning = false;
+        
+        // When process is stopped, ensure progress bar shows the current progress
+        if (this.processedCount > 0 && typeof this.onProgressUpdate === 'function') {
+            // Use actual processing progress, don't force 100%
+            const progress = this.getProgressPercentage();
+            this.onProgressUpdate(progress, this.processedCount, this.urls.length);
+        }
     }
     
     /**
@@ -147,6 +163,23 @@ export default class StatusTracker {
      */
     complete() {
         this.isRunning = false;
+        
+        // When process is complete, ensure progress bar shows the correct percentage
+        if (typeof this.onProgressUpdate === 'function') {
+            // If all URLs were processed, set to 100%
+            if (this.processedCount >= this.urls.length) {
+                this.onProgressUpdate(100, this.processedCount, this.urls.length);
+            } else {
+                // Otherwise show actual progress
+                const progress = this.getProgressPercentage();
+                this.onProgressUpdate(progress, this.processedCount, this.urls.length);
+            }
+        }
+        
+        // Update ETA display to show completion
+        if (typeof this.onEtaUpdate === 'function') {
+            this.onEtaUpdate(0, 0);
+        }
     }
     
     /**

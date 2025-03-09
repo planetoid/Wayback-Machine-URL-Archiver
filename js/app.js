@@ -146,7 +146,12 @@ class WaybackArchiver {
         
         // Reset UI when done
         this.statusTracker.complete();
-        this.uiController.resetUI();
+
+        //不再呼叫 this.uiController.resetUI()，而是只重置按鈕狀態
+        //this.uiController.resetUI();
+
+        this.uiController.elements.startButton.style.display = 'inline-block';
+        this.uiController.elements.stopButton.style.display = 'none';
     }
     
     /**
