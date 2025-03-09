@@ -161,6 +161,34 @@ export default class UIController {
     }
 
     /**
+     * Initialize the progress tracker with the current status
+     * @param {StatusTracker} statusTracker - The status tracker instance
+     */
+    initializeProgressTracking(statusTracker) {
+        this.statusTracker = statusTracker;
+
+        // Set initial progress if we have URLs to process
+        if (statusTracker.urls.length > 0) {
+            const initialProgress = statusTracker.getProgressPercentage();
+            this.updateProgress(initialProgress);
+
+            // Only show "Estimating..." if we're actually running
+            if (statusTracker.isRunning) {
+                this.elements.etaDisplay.textContent = 'Estimating...';
+            } else if (statusTracker.processedCount >= statusTracker.urls.length) {
+                this.elements.etaDisplay.textContent = 'Complete!';
+            } else {
+                this.elements.etaDisplay.textContent = '';
+            }
+        } else {
+            // No URLs, reset to 0%
+            this.elements.progressBar.style.width = '0%';
+            this.elements.progressBar.textContent = '0%';
+            this.elements.etaDisplay.textContent = '';
+        }
+    }
+
+    /**
      * Completely resets the UI including hiding progress
      * Use this when starting a new archiving session
      */
@@ -187,8 +215,11 @@ export default class UIController {
         this.elements.progressBar.style.width = `${validPercentage}%`;
         this.elements.progressBar.textContent = `${validPercentage}%`;
     
-        // Ensure progress bar container is visible when updating
-        this.elements.progressContainer.style.display = 'block';
+        // Ensure progress bar container is visible when there's actual progress to show
+        if (validPercentage > 0 || this.statusTracker?.isRunning) {
+            this.elements.progressContainer.style.display = 'block';
+        }
+
     
         console.log(`Update progress bar: ${validPercentage}%`);
     }

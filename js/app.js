@@ -48,20 +48,26 @@ class WaybackArchiver {
             this.handleFileUpload(file);
         });
     }
-    
+
     /**
      * Sets up status tracker callbacks for progress and ETA updates
      */
     setupStatusTrackerCallbacks() {
         // Update progress bar when progress changes
-        this.statusTracker.setProgressCallback((progress) => {
+        this.statusTracker.setProgressCallback((progress, processedCount, totalCount) => {
+            // Pass the exact percentage to ensure accuracy
             this.uiController.updateProgress(progress);
+
+            console.log(`Progress update: ${processedCount}/${totalCount} (${progress}%)`);
         });
-        
+
         // Update ETA display when ETA changes
-        this.statusTracker.setEtaCallback((estimatedTimeRemaining) => {
+        this.statusTracker.setEtaCallback((estimatedTimeRemaining, remainingUrls) => {
             this.uiController.updateEta(estimatedTimeRemaining);
         });
+
+        // Share the status tracker with UI controller for synchronized state
+        this.uiController.initializeProgressTracking(this.statusTracker);
     }
     
     /**
@@ -105,7 +111,7 @@ class WaybackArchiver {
         // Always reset the UI completely when starting a new archiving process
         // This ensures any previous progress state is cleared
         this.uiController.completeReset();
-        
+
         // Parse URLs from the text
         const urls = this.urlProcessor.parseUrlsFromText(urlText);
         
