@@ -1,0 +1,276 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.container {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 20px;
+    background-color: #f9f9f9;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+textarea {
+    width: 100%;
+    min-height: 150px;
+    margin-bottom: 10px;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+}
+
+button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+#fileInput {
+    margin-bottom: 10px;
+}
+
+#results {
+    margin-top: 20px;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 4px;
+    max-height: 400px;
+    overflow-y: auto;
+    display: none;
+}
+
+.status-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+}
+
+.status-table th {
+    background-color: #f2f2f2;
+    text-align: left;
+    padding: 8px;
+    border: 1px solid #ddd;
+}
+
+.status-table td {
+    padding: 8px;
+    border: 1px solid #ddd;
+    vertical-align: middle;
+}
+
+.status-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.status-icon {
+    font-size: 18px;
+    text-align: center;
+    margin-right: 10px;
+    width: 24px;
+    height: 24px;
+    text-align: center;
+    line-height: 24px;
+}
+
+.status-label {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.status-success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-warning {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-error {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.status-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.details-toggle {
+    cursor: pointer;
+    color: #0066cc;
+}
+
+.details-toggle:hover {
+    text-decoration: underline;
+}
+
+.url-cell {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.details-row {
+    display: none;
+}
+
+.details-content {
+    padding: 10px;
+    background-color: #f5f5f5;
+    border-top: 1px solid #ddd;
+}
+
+.log-details {
+    margin-top: 5px;
+    padding: 8px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    display: none;
+}
+
+.success {
+    border-left-color: #4CAF50;
+    background-color: #f0fff0;
+}
+
+.warning {
+    border-left-color: #ff9800;
+    background-color: #fff9e6;
+}
+
+.error {
+    border-left-color: #f44336;
+    background-color: #fff0f0;
+}
+
+.info {
+    border-left-color: #2196F3;
+    background-color: #f0f8ff;
+}
+
+.progress-container {
+    width: 100%;
+    background-color: #ddd;
+    margin-top: 10px;
+    display: none;
+}
+
+.progress-bar {
+    height: 20px;
+    background-color: #4CAF50;
+    text-align: center;
+    line-height: 20px;
+    color: white;
+    width: 0%;
+}
+
+.eta {
+    margin-top: 5px;
+    font-style: italic;
+}
+
+.expand-icon {
+    margin-left: auto;
+    font-size: 16px;
+    color: #666;
+}
+
+.url-text {
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+a {
+    color: #0066cc;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.alternate-method {
+    background-color: #d4edda;
+    color: #155724;
+    padding: 10px;
+    border-radius: 4px;
+    margin-top: 15px;
+}
+
+.manual-link-container {
+    margin-top: 10px;
+}
+
+.manual-archive-link {
+    display: inline-block;
+    margin-top: 5px;
+    color: #0066cc;
+}
+
+/* Responsive styles */
+@media screen and (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .status-table th:nth-child(4),
+    .status-table td:nth-child(4) {
+        display: none;
+    }
+    
+    .url-cell {
+        max-width: 150px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .container {
+        padding: 8px;
+    }
+    
+    .status-table th:nth-child(1),
+    .status-table td:nth-child(1),
+    .status-table th:nth-child(4),
+    .status-table td:nth-child(4) {
+        display: none;
+    }
+    
+    .url-cell {
+        max-width: 120px;
+    }
+    
+    button {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+}
