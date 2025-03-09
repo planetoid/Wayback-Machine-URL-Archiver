@@ -171,7 +171,7 @@ export default class UIController {
      * @returns {Object} - Object containing entry row and details div for updates
      */
     addLogEntry(data) {
-        const { message, type, url, details } = data;
+        const { message, type, url, details, archiveUrl } = data;
 
         // If this is a system message (no URL), just log to console
         if (!url) {
@@ -283,7 +283,19 @@ export default class UIController {
         statusLabel.textContent = statusText;
         statusCell.innerHTML = '';
         statusCell.appendChild(statusLabel);
-
+    
+        // 如果狀態是 "Archived" 且有提供 archiveUrl，直接更新 "View Archive" 欄位
+        if (type === 'success' && statusText === 'Archived' && archiveUrl) {
+            const viewCell = existingRow.children[3];
+            viewCell.innerHTML = '';
+        
+            const viewLink = document.createElement('a');
+            viewLink.href = archiveUrl;
+            viewLink.textContent = 'View';
+            viewLink.target = '_blank';
+            viewCell.appendChild(viewLink);
+        }
+    
         // Update details content
         const detailsRow = existingRow.nextElementSibling;
         const detailsContentCell = detailsRow.firstChild;
