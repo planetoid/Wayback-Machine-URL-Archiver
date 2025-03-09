@@ -173,8 +173,18 @@ export default class WaybackAPI {
                 filter: '!statuscode:5..'  // Filter out 5xx errors
             });
 
-            const response = await fetch(`${this.cdxUrl}?${params.toString()}`, {
-                signal: controller.signal
+            // Due to CORS issues, we can't directly use the CDX API in browser environments
+            // Instead, we'll try to use the alternative availability API with a timestamp parameter
+            // This is a workaround because CDX API doesn't support CORS and we can't use no-cors mode
+            // for JSON responses (they would be opaque)
+
+            // Try to use a more permissive endpoint from archive.org
+            const response = await fetch(`https://archive.org/wayback/available?url=${encodeURIComponent(normalizedUrl)}&timestamp=20000101`, {
+                signal: controller.signal,
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                }
             });
 
             clearTimeout(timeoutId);
@@ -184,69 +194,57 @@ export default class WaybackAPI {
             }
 
             const data = await response.json();
-            console.log("CDX API response:", data);
+            console.log("Availability API with timestamp response:", data);
 
-            // If we have valid data and at least one entry
-            if (data && Array.isArray(data) && data.length >= 2) {
-                // First item is usually the header row, second item is the data
-                const headerRow = data[0];
-                const dataRow = data[1];
+            const isArchived = data &&
+                data.archived_snapshots &&
+                data.archived_snapshots.closest &&
+                data.archived_snapshots.closest.available === true;
 
-                // Find indices of the fields
-                const timestampIndex = headerRow.indexOf('timestamp');
-                const originalIndex = headerRow.indexOf('original');
-                const statuscodeIndex = headerRow.indexOf('statuscode');
+            if (isArchived) {
+                // Extract archive URL and date
+                const archiveUrl = data.archived_snapshots.closest.url;
+                const timestamp = data.archived_snapshots.closest.timestamp;
 
-                if (timestampIndex >= 0 && originalIndex >= 0 && statuscodeIndex >= 0) {
-                    const timestamp = dataRow[timestampIndex];
-                    const original = dataRow[originalIndex];
-                    const statuscode = dataRow[statuscodeIndex];
-
-                    // Check if the status code indicates a successful archive (usually 2xx)
-                    const isSuccessful = String(statuscode).startsWith('2');
-
-                    if (isSuccessful) {
-                        return {
-                            isArchived: true,
-                            url: url,
-                            archiveUrl: `https://web.archive.org/web/${timestamp}/${original}`,
-                            timestamp: timestamp,
-                            formattedDate: this._formatTimestamp(timestamp),
-                            source: 'cdx_api'
-                        };
-                    }
-                }
+                return {
+                    isArchived: true,
+                    url: url,
+                    archiveUrl: archiveUrl,
+                    timestamp: timestamp,
+                    formattedDate: this._formatTimestamp(timestamp),
+                    source: 'availability_api_with_timestamp'
+                };
             }
 
-            // If we didn't find a valid archive or couldn't parse the response
+            // If not found or no valid data, return a not-archived result
             return {
                 isArchived: false,
                 url: url,
                 checkUrl: `https://web.archive.org/web/*/${url}`,
-                source: 'cdx_api'
+                source: 'availability_api_with_timestamp'
             };
         } catch (error) {
             clearTimeout(timeoutId);
 
             if (error.name === 'AbortError') {
-                console.error("Timeout while checking archive status via CDX API for:", url);
+                console.error("Timeout while checking archive status via alternative API for:", url);
                 return {
                     isArchived: false,
                     url: url,
-                    error: 'Request timed out. The CDX API is responding slowly.',
+                    error: 'Request timed out. The alternative API is responding slowly.',
                     checkUrl: `https://web.archive.org/web/*/${url}`,
                     timeout: true,
-                    source: 'cdx_api'
+                    source: 'availability_api_with_timestamp'
                 };
             }
 
-            console.error("Error checking archive status via CDX API:", error);
+            console.error("Error checking archive status via alternative API:", error);
             return {
                 isArchived: false,
                 url: url,
                 error: error.message,
                 checkUrl: `https://web.archive.org/web/*/${url}`,
-                source: 'cdx_api'
+                source: 'availability_api_with_timestamp'
             };
         }
     }
@@ -406,86 +404,81 @@ export default class WaybackAPI {
      */
     async getArchiveHistory(url) {
         const normalizedUrl = this.normalizeUrl(url);
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+        // Due to CORS limitations, we can't use the CDX API directly in a browser environment
+        // Instead, we'll use multiple calls to the availability API with different timestamps
+        // to simulate getting archive history
+
+        const timestamps = [
+            '20250101', // Current year
+            '20240101', // Last year
+            '20230101', // Two years ago
+            '20220101', // Three years ago
+            '20210101'  // Four years ago
+        ];
+
+        const captures = [];
 
         try {
-            // Configure CDX API to get recent captures
-            const params = new URLSearchParams({
-                url: normalizedUrl,
-                output: 'json',
-                limit: 10, // Get the 10 most recent captures
-                fl: 'timestamp,original,statuscode',
-                collapse: 'timestamp:8', // Group by day
-                filter: '!statuscode:5..' // Filter out error codes
-            });
+            for (const timestamp of timestamps) {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
-            const response = await fetch(`${this.cdxUrl}?${params.toString()}`, {
-                signal: controller.signal
-            });
+                try {
+                    const response = await fetch(`https://archive.org/wayback/available?url=${encodeURIComponent(normalizedUrl)}&timestamp=${timestamp}`, {
+                        signal: controller.signal,
+                        headers: {
+                            'Cache-Control': 'no-cache',
+                            'Pragma': 'no-cache'
+                        }
+                    });
 
-            clearTimeout(timeoutId);
+                    clearTimeout(timeoutId);
 
-            if (!response.ok) {
-                throw new Error(`HTTP error ${response.status}`);
-            }
-
-            const data = await response.json();
-            console.log("Archive history response:", data);
-
-            // If we have data and at least a header row
-            if (data && Array.isArray(data) && data.length >= 1) {
-                const headerRow = data[0];
-                const captures = [];
-
-                // Find indices of each field
-                const timestampIndex = headerRow.indexOf('timestamp');
-                const originalIndex = headerRow.indexOf('original');
-                const statuscodeIndex = headerRow.indexOf('statuscode');
-
-                // Skip the header row and process each capture
-                for (let i = 1; i < data.length; i++) {
-                    const row = data[i];
-
-                    if (row && row.length >= headerRow.length) {
-                        captures.push({
-                            timestamp: row[timestampIndex],
-                            formattedDate: this._formatTimestamp(row[timestampIndex]),
-                            originalUrl: row[originalIndex],
-                            statusCode: row[statuscodeIndex],
-                            archiveUrl: `https://web.archive.org/web/${row[timestampIndex]}/${row[originalIndex]}`
-                        });
+                    if (!response.ok) {
+                        continue; // Skip to next timestamp if this one fails
                     }
-                }
 
-                return {
-                    success: true,
-                    url: url,
-                    captureCount: captures.length,
-                    captures: captures
-                };
+                    const data = await response.json();
+
+                    const isArchived = data &&
+                        data.archived_snapshots &&
+                        data.archived_snapshots.closest &&
+                        data.archived_snapshots.closest.available === true;
+
+                    if (isArchived) {
+                        const archiveTimestamp = data.archived_snapshots.closest.timestamp;
+
+                        // Check if we already have this exact timestamp (avoid duplicates)
+                        const isDuplicate = captures.some(capture => capture.timestamp === archiveTimestamp);
+
+                        if (!isDuplicate) {
+                            captures.push({
+                                timestamp: archiveTimestamp,
+                                formattedDate: this._formatTimestamp(archiveTimestamp),
+                                originalUrl: normalizedUrl,
+                                statusCode: '200', // We don't have this info from the availability API
+                                archiveUrl: data.archived_snapshots.closest.url
+                            });
+                        }
+                    }
+                } catch (error) {
+                    clearTimeout(timeoutId);
+                    console.warn(`Error checking archive for timestamp ${timestamp}:`, error);
+                    // Continue with next timestamp
+                }
             }
+
+            // Sort captures by timestamp in descending order (newest first)
+            captures.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
 
             return {
                 success: true,
                 url: url,
-                captureCount: 0,
-                captures: [],
-                message: "No archive history found."
+                captureCount: captures.length,
+                captures: captures
             };
         } catch (error) {
-            clearTimeout(timeoutId);
-
-            if (error.name === 'AbortError') {
-                console.error("Timeout while fetching archive history for:", url);
-                return {
-                    success: false,
-                    url: url,
-                    error: 'Request timed out while fetching archive history.',
-                    timeout: true
-                };
-            }
-
             console.error("Error fetching archive history:", error);
             return {
                 success: false,
