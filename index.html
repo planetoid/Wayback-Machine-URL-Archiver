@@ -54,14 +54,72 @@
             overflow-y: auto;
             display: none;
         }
-        .log-entry {
-            margin-bottom: 8px;
+        .status-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+        .status-table th {
+            background-color: #f2f2f2;
+            text-align: left;
             padding: 8px;
+            border: 1px solid #ddd;
+        }
+        .status-table td {
+            padding: 8px;
+            border: 1px solid #ddd;
+            vertical-align: middle;
+        }
+        .status-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .status-icon {
+            font-size: 18px;
+            text-align: center;
+        }
+        .status-label {
+            display: inline-block;
+            padding: 3px 8px;
             border-radius: 4px;
-            border-left: 4px solid #ddd;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .status-error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .status-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        .details-toggle {
             cursor: pointer;
-            display: flex;
-            align-items: center;
+            color: #0066cc;
+        }
+        .details-toggle:hover {
+            text-decoration: underline;
+        }
+        .url-cell {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .details-row {
+            display: none;
+        }
+        .details-content {
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-top: 1px solid #ddd;
         }
         .log-details {
             margin-top: 5px;
@@ -174,9 +232,25 @@
         </div>
         
         <div id="results">
-            <h3>Results:</h3>
-            <div id="logEntries"></div>
-            <div id="manualLinkContainer"></div>
+            <h3>Archive Results</h3>
+            <table class="status-table" id="archiveStatusTable">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">No.</th>
+                        <th>URL</th>
+                        <th style="width: 100px;">Status</th>
+                        <th style="width: 110px;">View Archive</th>
+                        <th style="width: 80px;">Details</th>
+                    </tr>
+                </thead>
+                <tbody id="statusTableBody">
+                    <!-- Status rows will be added here dynamically -->
+                </tbody>
+            </table>
+            <div id="logEntries" style="display: none;">
+                <!-- Legacy log entries for compatibility -->
+            </div>
+            <div id="manualLinkContainer" style="display: none;"></div>
         </div>
     </div>
 
@@ -527,135 +601,239 @@
                 }
             }
             
-            // Add a log entry to the results
+            // Add a log entry to the results table
             function addLogEntry(message, type, url = null, details = null) {
-                // Create the container for the log entry
-                const entry = document.createElement('div');
-                entry.classList.add('log-entry', type);
+                // Get the status table body
+                const tableBody = document.getElementById('statusTableBody');
                 
-                // Add the status icon based on the type
-                const statusIcon = document.createElement('span');
-                statusIcon.classList.add('status-icon');
+                // If this is a system message (no URL), handle differently
+                if (!url) {
+                    console.log(`[${type.toUpperCase()}] ${message}`);
+                    return { entry: null, detailsDiv: null };
+                }
                 
+                // Find if we already have an entry for this URL
+                let existingRow = null;
+                const rows = tableBody.getElementsByTagName('tr');
+                for (let i = 0; i < rows.length; i++) {
+                    if (rows[i].dataset.url === url) {
+                        existingRow = rows[i];
+                        break;
+                    }
+                }
+                
+                // If no existing row, create a new one
+                if (!existingRow) {
+                    // Count current rows for numbering
+                    const rowNumber = tableBody.getElementsByTagName('tr').length / 2 + 1;
+                    
+                    // Create main row
+                    const row = document.createElement('tr');
+                    row.dataset.url = url;
+                    row.className = 'status-row';
+                    
+                    // Add number cell
+                    const numberCell = document.createElement('td');
+                    numberCell.textContent = rowNumber;
+                    row.appendChild(numberCell);
+                    
+                    // Add URL cell
+                    const urlCell = document.createElement('td');
+                    urlCell.className = 'url-cell';
+                    urlCell.title = url;
+                    urlCell.textContent = url;
+                    row.appendChild(urlCell);
+                    
+                    // Add status cell
+                    const statusCell = document.createElement('td');
+                    row.appendChild(statusCell);
+                    
+                    // Add view archive cell
+                    const viewCell = document.createElement('td');
+                    viewCell.textContent = '—';
+                    row.appendChild(viewCell);
+                    
+                    // Add details cell
+                    const detailsCell = document.createElement('td');
+                    const detailsToggle = document.createElement('span');
+                    detailsToggle.className = 'details-toggle';
+                    detailsToggle.textContent = 'Expand';
+                    detailsToggle.onclick = function() {
+                        const detailsRow = row.nextElementSibling;
+                        if (detailsRow.style.display === 'table-row') {
+                            detailsRow.style.display = 'none';
+                            detailsToggle.textContent = 'Expand';
+                        } else {
+                            detailsRow.style.display = 'table-row';
+                            detailsToggle.textContent = 'Collapse';
+                        }
+                    };
+                    detailsCell.appendChild(detailsToggle);
+                    row.appendChild(detailsCell);
+                    
+                    // Create details row
+                    const detailsRow = document.createElement('tr');
+                    detailsRow.className = 'details-row';
+                    
+                    const detailsContentCell = document.createElement('td');
+                    detailsContentCell.colSpan = 5;
+                    detailsContentCell.className = 'details-content';
+                    detailsRow.appendChild(detailsContentCell);
+                    
+                    // Add rows to table
+                    tableBody.appendChild(row);
+                    tableBody.appendChild(detailsRow);
+                    
+                    existingRow = row;
+                }
+                
+                // Update the status cell with current status
+                const statusCell = existingRow.children[2];
+                const statusLabel = document.createElement('span');
+                statusLabel.className = `status-label status-${type}`;
+                
+                let statusText = '';
                 switch(type) {
                     case 'success':
-                        statusIcon.innerHTML = '✅';
+                        statusText = 'Archived';
                         break;
                     case 'warning':
-                        statusIcon.innerHTML = '⚠️';
+                        statusText = 'Warning';
                         break;
                     case 'error':
-                        statusIcon.innerHTML = '❌';
+                        statusText = 'Failed';
                         break;
                     case 'info':
-                        statusIcon.innerHTML = 'ℹ️';
+                        statusText = 'Processing';
                         break;
                     default:
-                        statusIcon.innerHTML = '•';
+                        statusText = 'Unknown';
                 }
                 
-                entry.appendChild(statusIcon);
+                statusLabel.textContent = statusText;
+                statusCell.innerHTML = '';
+                statusCell.appendChild(statusLabel);
                 
-                // Add the URL or message text
-                const textElement = document.createElement('span');
-                textElement.classList.add('url-text');
+                // Update details content
+                const detailsRow = existingRow.nextElementSibling;
+                const detailsContentCell = detailsRow.firstChild;
                 
-                // If a URL was provided, use that as the main text
-                if (url) {
-                    textElement.textContent = url;
-                    // Also add a title attribute for long URLs
-                    textElement.title = url;
-                } else {
-                    textElement.textContent = message;
-                }
+                // Add the main message
+                const messageElement = document.createElement('div');
+                messageElement.innerHTML = `<strong>${message}</strong>`;
                 
-                entry.appendChild(textElement);
+                // Clear previous details when updating status
+                detailsContentCell.innerHTML = '';
+                detailsContentCell.appendChild(messageElement);
                 
-                // Add the expand/collapse icon if we have details
-                if (details || (url && message && message !== url)) {
-                    const expandIcon = document.createElement('span');
-                    expandIcon.classList.add('expand-icon');
-                    expandIcon.innerHTML = '▼';
-                    entry.appendChild(expandIcon);
-                }
-                
-                // Add to the log container
-                logEntriesDiv.appendChild(entry);
-                
-                // Create a details section if we have details or a separate message
-                if (details || (url && message && message !== url)) {
-                    const detailsDiv = document.createElement('div');
-                    detailsDiv.classList.add('log-details');
+                // Add any additional details
+                if (details) {
+                    const detailsElement = document.createElement('div');
+                    detailsElement.style.marginTop = '8px';
                     
-                    // Add the main message if a URL was provided separately
-                    if (url && message && message !== url) {
-                        const statusMessage = document.createElement('div');
-                        statusMessage.textContent = message;
-                        detailsDiv.appendChild(statusMessage);
-                    }
-                    
-                    // Add any additional details
-                    if (details) {
-                        if (typeof details === 'string') {
-                            // If it's a string, just add it
-                            const detailsPara = document.createElement('div');
-                            
-                            // Check if the message contains a URL to make clickable
-                            if (details.includes('https://web.archive.org/')) {
-                                const parts = details.split('https://');
-                                const beforeUrl = parts[0];
-                                const urlPart = 'https://' + parts[1];
+                    if (typeof details === 'string') {
+                        // Check for URLs and make them clickable
+                        if (details.includes('https://web.archive.org/')) {
+                            // Split by newlines first to handle multiple lines
+                            const lines = details.split('\n');
+                            for (const line of lines) {
+                                const lineElement = document.createElement('div');
                                 
-                                detailsPara.textContent = beforeUrl + ' ';
+                                if (line.includes('https://web.archive.org/')) {
+                                    // This line contains a URL - make it clickable
+                                    const urlMatch = line.match(/(https:\/\/web\.archive\.org\/[^\s]+)/);
+                                    if (urlMatch) {
+                                        const url = urlMatch[1];
+                                        const beforeUrl = line.substring(0, line.indexOf(url));
+                                        const afterUrl = line.substring(line.indexOf(url) + url.length);
+                                        
+                                        lineElement.textContent = beforeUrl;
+                                        
+                                        const linkElement = document.createElement('a');
+                                        linkElement.href = url;
+                                        linkElement.textContent = url;
+                                        linkElement.target = '_blank';
+                                        lineElement.appendChild(linkElement);
+                                        
+                                        lineElement.appendChild(document.createTextNode(afterUrl));
+                                        
+                                        // If this contains the archive URL, also update the "View Archive" cell
+                                        if (line.includes('View archive') || line.includes('Already archived')) {
+                                            const viewCell = existingRow.children[3];
+                                            viewCell.innerHTML = '';
+                                            
+                                            const viewLink = document.createElement('a');
+                                            viewLink.href = url;
+                                            viewLink.textContent = 'View';
+                                            viewLink.target = '_blank';
+                                            viewCell.appendChild(viewLink);
+                                        }
+                                    } else {
+                                        lineElement.textContent = line;
+                                    }
+                                } else {
+                                    lineElement.textContent = line;
+                                }
                                 
-                                const link = document.createElement('a');
-                                link.href = urlPart;
-                                link.textContent = urlPart;
-                                link.target = '_blank';
-                                detailsPara.appendChild(link);
-                            } else {
-                                detailsPara.textContent = details;
+                                detailsElement.appendChild(lineElement);
                             }
-                            
-                            detailsDiv.appendChild(detailsPara);
-                        } else if (typeof details === 'object') {
-                            // If it's an object, format it
-                            const detailsJSON = document.createElement('pre');
-                            detailsJSON.textContent = JSON.stringify(details, null, 2);
-                            detailsDiv.appendChild(detailsJSON);
+                        } else {
+                            // Regular text without URLs
+                            detailsElement.innerText = details;
                         }
+                    } else if (typeof details === 'object') {
+                        // JSON data
+                        const pre = document.createElement('pre');
+                        pre.textContent = JSON.stringify(details, null, 2);
+                        detailsElement.appendChild(pre);
                     }
                     
-                    // Add manual link container for archive links
-                    if (type === 'error' || type === 'warning') {
-                        const manualLinkDiv = document.createElement('div');
-                        manualLinkDiv.id = 'manualLinkContainer-' + Date.now();
-                        detailsDiv.appendChild(manualLinkDiv);
-                    }
-                    
-                    logEntriesDiv.appendChild(detailsDiv);
-                    
-                    // Add click event to toggle details
-                    entry.addEventListener('click', function() {
-                        const isVisible = detailsDiv.style.display === 'block';
-                        detailsDiv.style.display = isVisible ? 'none' : 'block';
-                        
-                        // Toggle the expand/collapse icon
-                        const expandIcon = entry.querySelector('.expand-icon');
-                        if (expandIcon) {
-                            expandIcon.innerHTML = isVisible ? '▼' : '▲';
-                        }
-                    });
+                    detailsContentCell.appendChild(detailsElement);
                 }
                 
-                // Auto-scroll to the latest entry
-                logEntriesDiv.scrollTop = logEntriesDiv.scrollHeight;
+                // Auto-expand for errors and warnings
+                if (type === 'error' || type === 'warning') {
+                    detailsRow.style.display = 'table-row';
+                    const detailsToggle = existingRow.querySelector('.details-toggle');
+                    if (detailsToggle) {
+                        detailsToggle.textContent = 'Collapse';
+                    }
+                }
+                
+                // For manual archive links in error/warning cases
+                if (type === 'error' || type === 'warning') {
+                    // Create a container for manual links if needed
+                    let manualLinkContainer = detailsContentCell.querySelector('.manual-link-container');
+                    if (!manualLinkContainer) {
+                        manualLinkContainer = document.createElement('div');
+                        manualLinkContainer.className = 'manual-link-container';
+                        manualLinkContainer.style.marginTop = '10px';
+                        detailsContentCell.appendChild(manualLinkContainer);
+                    }
+                    
+                    // Add manual archive link if not already added
+                    if (!manualLinkContainer.querySelector('.manual-archive-link')) {
+                        const archiveUrl = `https://web.archive.org/save/${url}`;
+                        const linkElement = document.createElement('a');
+                        linkElement.href = archiveUrl;
+                        linkElement.className = 'manual-archive-link';
+                        linkElement.textContent = 'Try archiving manually';
+                        linkElement.target = '_blank';
+                        linkElement.style.display = 'inline-block';
+                        linkElement.style.marginTop = '5px';
+                        linkElement.style.color = '#0066cc';
+                        manualLinkContainer.appendChild(linkElement);
+                    }
+                }
                 
                 // Log to console as well
-                console.log(`[${type.toUpperCase()}] ${url || message}`);
+                console.log(`[${type.toUpperCase()}] ${url}: ${message}`);
                 
-                // Return the container and details if needed elsewhere
-                return { entry, detailsDiv: document.querySelector('.log-details:last-child') };
+                // Return elements that might be needed for updates
+                return { 
+                    entry: existingRow, 
+                    detailsDiv: detailsContentCell
+                };
             }
         });
     </script>
