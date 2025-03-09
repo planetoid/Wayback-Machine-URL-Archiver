@@ -50,26 +50,41 @@
             border: 1px solid #ddd;
             padding: 10px;
             border-radius: 4px;
-            max-height: 300px;
+            max-height: 400px;
             overflow-y: auto;
             display: none;
         }
         .log-entry {
-            margin-bottom: 5px;
-            padding: 5px;
-            border-bottom: 1px solid #eee;
+            margin-bottom: 8px;
+            padding: 8px;
+            border-radius: 4px;
+            border-left: 4px solid #ddd;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+        .log-details {
+            margin-top: 5px;
+            padding: 8px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            display: none;
         }
         .success {
-            color: green;
+            border-left-color: #4CAF50;
+            background-color: #f0fff0;
         }
         .warning {
-            color: orange;
+            border-left-color: #ff9800;
+            background-color: #fff9e6;
         }
         .error {
-            color: red;
+            border-left-color: #f44336;
+            background-color: #fff0f0;
         }
         .info {
-            color: blue;
+            border-left-color: #2196F3;
+            background-color: #f0f8ff;
         }
         .progress-container {
             width: 100%;
@@ -88,6 +103,32 @@
         .eta {
             margin-top: 5px;
             font-style: italic;
+        }
+        .status-icon {
+            margin-right: 10px;
+            font-size: 18px;
+            width: 24px;
+            height: 24px;
+            text-align: center;
+            line-height: 24px;
+        }
+        .expand-icon {
+            margin-left: auto;
+            font-size: 16px;
+            color: #666;
+        }
+        .url-text {
+            flex-grow: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -310,7 +351,7 @@
                                      data.archived_snapshots.closest.available === true;
                     
                     if (isArchived) {
-                        // Extract and show the archive URL and date
+                        // Extract archive URL and date
                         const archiveUrl = data.archived_snapshots.closest.url;
                         const timestamp = data.archived_snapshots.closest.timestamp;
                         
@@ -324,14 +365,18 @@
                         
                         const formattedDate = `${year}-${month}-${day} ${hour}:${minute}:${second}`;
                         
-                        addLogEntry(`URL is already archived at ${formattedDate} - View at: ${archiveUrl}`, 'info');
+                        // Add an entry with the URL as the main text and the details in the expandable area
+                        const details = `Already archived on ${formattedDate}\nView archive: ${archiveUrl}`;
+                        addLogEntry('URL already archived', 'success', url, details);
                     }
                     
                     return isArchived;
                 } catch (error) {
                     console.error("Error checking archive status:", error);
                     // If there's still a CORS issue, provide an alternative way to check
-                    addLogEntry(`Note: You can manually check if ${url} is archived by visiting https://web.archive.org/web/*/${url}`, 'info');
+                    const checkUrl = `https://web.archive.org/web/*/${url}`;
+                    const details = `Could not automatically check archive status. You can manually check at: ${checkUrl}`;
+                    addLogEntry('Archive status check failed', 'warning', url, details);
                     
                     // Return false to proceed with archiving attempt
                     return false;
@@ -344,7 +389,7 @@
                     // First, double-check if it's already archived (with better logging)
                     const isAlreadyArchived = await checkIfArchived(url);
                     if (isAlreadyArchived) {
-                        return 'URL was already archived (see info above)';
+                        return;
                     }
                     
                     // Prepare fetch options
@@ -361,94 +406,256 @@
                     }
                     
                     // Option 1: Use no-cors mode (this will make the request but won't give access to the response details)
-                    // This is a "fire and forget" approach
                     await fetch(`https://web.archive.org/save/${url}`, fetchOptions);
-                    
-                    // Create a manual archiving link anyway (as a fallback)
-                    const archiveUrl = `https://web.archive.org/save/${url}`;
-                    const linkElement = document.createElement('a');
-                    linkElement.href = archiveUrl;
-                    linkElement.target = '_blank';
-                    linkElement.textContent = 'Open archive request in new tab';
-                    linkElement.style.color = 'blue';
-                    linkElement.style.textDecoration = 'underline';
-                    linkElement.style.cursor = 'pointer';
-                    
-                    // Clear previous links and add this one
-                    const manualLinkContainer = document.getElementById('manualLinkContainer');
-                    manualLinkContainer.innerHTML = '';
-                    manualLinkContainer.appendChild(linkElement);
                     
                     // Since we can't check the response with no-cors, we'll do a follow-up check
                     // Wait a moment for the archiving to potentially complete
-                    addLogEntry('Waiting 5 seconds before checking archive status...', 'info');
+                    const waitingLogEntry = addLogEntry('Archive request sent', 'info', url, 'Waiting for 5 seconds before verifying...');
                     await new Promise(resolve => setTimeout(resolve, 5000));
                     
                     // Check if it was archived (with retries)
+                    let verificationSuccess = false;
+                    let verificationDetails = '';
+                    
                     for (let attempt = 1; attempt <= 3; attempt++) {
-                        addLogEntry(`Verification attempt ${attempt}/3...`, 'info');
+                        const attemptMessage = `Verification attempt ${attempt}/3...`;
+                        if (attempt === 1) {
+                            // Update the details of the waiting log entry for the first attempt
+                            if (waitingLogEntry.detailsDiv) {
+                                waitingLogEntry.detailsDiv.textContent = attemptMessage;
+                            }
+                        } else {
+                            // For subsequent attempts, append to the verification details
+                            verificationDetails += `\n${attemptMessage}`;
+                        }
+                        
                         const checkResult = await checkIfArchived(url);
                         if (checkResult) {
-                            return 'Successfully archived and verified';
+                            verificationSuccess = true;
+                            break;
                         }
+                        
                         // If not found and we have more attempts, wait and try again
                         if (attempt < 3) {
                             await new Promise(resolve => setTimeout(resolve, 2000));
                         }
                     }
                     
-                    // If we get here, we couldn't verify the archive
-                    return 'Archive request sent, but verification failed (it may still be processing - check manually later)';
+                    // Remove the waiting log entry since we'll add a final status entry
+                    if (waitingLogEntry.entry) {
+                        logEntriesDiv.removeChild(waitingLogEntry.entry);
+                    }
+                    if (waitingLogEntry.detailsDiv) {
+                        logEntriesDiv.removeChild(waitingLogEntry.detailsDiv);
+                    }
+                    
+                    if (verificationSuccess) {
+                        // Success already logged by checkIfArchived
+                    } else {
+                        // Create a manual archive link for the user
+                        const archiveUrl = `https://web.archive.org/save/${url}`;
+                        verificationDetails += `\n\nArchive request was sent but could not be verified.`;
+                        verificationDetails += `\nIt may still be processing - check manually later at: ${archiveUrl}`;
+                        
+                        addLogEntry('Archive verification failed', 'warning', url, verificationDetails);
+                        
+                        // Create a manual link element
+                        const manualLinkContainer = document.createElement('div');
+                        manualLinkContainer.id = 'manualLinkContainer';
+                        
+                        const linkElement = document.createElement('a');
+                        linkElement.href = archiveUrl;
+                        linkElement.target = '_blank';
+                        linkElement.textContent = 'Try archiving manually';
+                        linkElement.className = 'manual-archive-link';
+                        
+                        manualLinkContainer.appendChild(linkElement);
+                        
+                        // Add the manual link to the last warning's details
+                        const lastWarning = document.querySelector('.log-entry.warning:last-child');
+                        if (lastWarning) {
+                            const nextSibling = lastWarning.nextSibling;
+                            if (nextSibling && nextSibling.classList.contains('log-details')) {
+                                nextSibling.appendChild(manualLinkContainer);
+                                
+                                // Auto-expand this warning
+                                nextSibling.style.display = 'block';
+                                const expandIcon = lastWarning.querySelector('.expand-icon');
+                                if (expandIcon) {
+                                    expandIcon.innerHTML = '▲';
+                                }
+                            }
+                        }
+                    }
                 } catch (error) {
                     console.error("Error during archiving:", error);
                     
-                    // Option 2: Suggest using the direct URL in a new tab
+                    // Create a manual link for error cases
                     const archiveUrl = `https://web.archive.org/save/${url}`;
+                    const errorDetails = `CORS issue detected: ${error.message}\nTry archiving manually using the link below.`;
                     
-                    // Create a clickable link for manual archiving
+                    addLogEntry('Archive request failed', 'error', url, errorDetails);
+                    
+                    // Create and add the manual archive link
+                    const manualLinkContainer = document.createElement('div');
+                    manualLinkContainer.id = 'manualLinkContainer';
+                    
                     const linkElement = document.createElement('a');
                     linkElement.href = archiveUrl;
                     linkElement.target = '_blank';
                     linkElement.textContent = 'Archive this URL manually';
-                    linkElement.style.color = 'blue';
-                    linkElement.style.textDecoration = 'underline';
-                    linkElement.style.cursor = 'pointer';
+                    linkElement.className = 'manual-archive-link';
+                    linkElement.style.color = '#0066cc';
                     
-                    // Clear previous links and add this one
-                    const manualLinkContainer = document.getElementById('manualLinkContainer');
-                    manualLinkContainer.innerHTML = '';
                     manualLinkContainer.appendChild(linkElement);
                     
-                    throw new Error(`CORS issue detected. Click the link to archive manually, or consider using a server-side proxy.`);
+                    // Add the manual link to the last error's details
+                    const lastError = document.querySelector('.log-entry.error:last-child');
+                    if (lastError) {
+                        const nextSibling = lastError.nextSibling;
+                        if (nextSibling && nextSibling.classList.contains('log-details')) {
+                            nextSibling.appendChild(manualLinkContainer);
+                            
+                            // Auto-expand this error
+                            nextSibling.style.display = 'block';
+                            const expandIcon = lastError.querySelector('.expand-icon');
+                            if (expandIcon) {
+                                expandIcon.innerHTML = '▲';
+                            }
+                        }
+                    }
                 }
             }
             
             // Add a log entry to the results
-            function addLogEntry(message, type) {
+            function addLogEntry(message, type, url = null, details = null) {
+                // Create the container for the log entry
                 const entry = document.createElement('div');
                 entry.classList.add('log-entry', type);
                 
-                // Check if the message contains a URL to make clickable
-                if (type === 'info' && message.includes('https://web.archive.org/')) {
-                    const parts = message.split('https://');
-                    const beforeUrl = parts[0];
-                    const urlPart = 'https://' + parts[1];
-                    
-                    entry.textContent = beforeUrl;
-                    
-                    const link = document.createElement('a');
-                    link.href = urlPart;
-                    link.textContent = urlPart;
-                    link.target = '_blank';
-                    entry.appendChild(link);
-                } else {
-                    entry.textContent = message;
+                // Add the status icon based on the type
+                const statusIcon = document.createElement('span');
+                statusIcon.classList.add('status-icon');
+                
+                switch(type) {
+                    case 'success':
+                        statusIcon.innerHTML = '✅';
+                        break;
+                    case 'warning':
+                        statusIcon.innerHTML = '⚠️';
+                        break;
+                    case 'error':
+                        statusIcon.innerHTML = '❌';
+                        break;
+                    case 'info':
+                        statusIcon.innerHTML = 'ℹ️';
+                        break;
+                    default:
+                        statusIcon.innerHTML = '•';
                 }
                 
+                entry.appendChild(statusIcon);
+                
+                // Add the URL or message text
+                const textElement = document.createElement('span');
+                textElement.classList.add('url-text');
+                
+                // If a URL was provided, use that as the main text
+                if (url) {
+                    textElement.textContent = url;
+                    // Also add a title attribute for long URLs
+                    textElement.title = url;
+                } else {
+                    textElement.textContent = message;
+                }
+                
+                entry.appendChild(textElement);
+                
+                // Add the expand/collapse icon if we have details
+                if (details || (url && message && message !== url)) {
+                    const expandIcon = document.createElement('span');
+                    expandIcon.classList.add('expand-icon');
+                    expandIcon.innerHTML = '▼';
+                    entry.appendChild(expandIcon);
+                }
+                
+                // Add to the log container
                 logEntriesDiv.appendChild(entry);
+                
+                // Create a details section if we have details or a separate message
+                if (details || (url && message && message !== url)) {
+                    const detailsDiv = document.createElement('div');
+                    detailsDiv.classList.add('log-details');
+                    
+                    // Add the main message if a URL was provided separately
+                    if (url && message && message !== url) {
+                        const statusMessage = document.createElement('div');
+                        statusMessage.textContent = message;
+                        detailsDiv.appendChild(statusMessage);
+                    }
+                    
+                    // Add any additional details
+                    if (details) {
+                        if (typeof details === 'string') {
+                            // If it's a string, just add it
+                            const detailsPara = document.createElement('div');
+                            
+                            // Check if the message contains a URL to make clickable
+                            if (details.includes('https://web.archive.org/')) {
+                                const parts = details.split('https://');
+                                const beforeUrl = parts[0];
+                                const urlPart = 'https://' + parts[1];
+                                
+                                detailsPara.textContent = beforeUrl + ' ';
+                                
+                                const link = document.createElement('a');
+                                link.href = urlPart;
+                                link.textContent = urlPart;
+                                link.target = '_blank';
+                                detailsPara.appendChild(link);
+                            } else {
+                                detailsPara.textContent = details;
+                            }
+                            
+                            detailsDiv.appendChild(detailsPara);
+                        } else if (typeof details === 'object') {
+                            // If it's an object, format it
+                            const detailsJSON = document.createElement('pre');
+                            detailsJSON.textContent = JSON.stringify(details, null, 2);
+                            detailsDiv.appendChild(detailsJSON);
+                        }
+                    }
+                    
+                    // Add manual link container for archive links
+                    if (type === 'error' || type === 'warning') {
+                        const manualLinkDiv = document.createElement('div');
+                        manualLinkDiv.id = 'manualLinkContainer-' + Date.now();
+                        detailsDiv.appendChild(manualLinkDiv);
+                    }
+                    
+                    logEntriesDiv.appendChild(detailsDiv);
+                    
+                    // Add click event to toggle details
+                    entry.addEventListener('click', function() {
+                        const isVisible = detailsDiv.style.display === 'block';
+                        detailsDiv.style.display = isVisible ? 'none' : 'block';
+                        
+                        // Toggle the expand/collapse icon
+                        const expandIcon = entry.querySelector('.expand-icon');
+                        if (expandIcon) {
+                            expandIcon.innerHTML = isVisible ? '▼' : '▲';
+                        }
+                    });
+                }
+                
+                // Auto-scroll to the latest entry
                 logEntriesDiv.scrollTop = logEntriesDiv.scrollHeight;
                 
-                console.log(`[${type.toUpperCase()}] ${message}`);
+                // Log to console as well
+                console.log(`[${type.toUpperCase()}] ${url || message}`);
+                
+                // Return the container and details if needed elsewhere
+                return { entry, detailsDiv: document.querySelector('.log-details:last-child') };
             }
         });
     </script>
