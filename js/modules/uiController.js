@@ -157,7 +157,7 @@ export default class UIController {
         this.elements.stopButton.style.display = 'inline-block';
         this.elements.resultsDiv.style.display = 'block';
         this.elements.statusTableBody.innerHTML = '';
-        this.elements.progressContainer.style.display = 'block';
+        //this.elements.progressContainer.style.display = 'block';
         //this.elements.progressBar.style.width = '0%';
         //this.elements.progressBar.textContent = '0%';
         //this.elements.etaDisplay.textContent = 'Estimating...';
