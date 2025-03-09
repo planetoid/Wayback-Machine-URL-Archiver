@@ -7,6 +7,7 @@ export default class UIController {
         // UI Elements
         this.elements = {
             urlListTextarea: document.getElementById('urlList'),
+            urlListMsg: document.getElementById('urlListMsg'),
             fileInput: document.getElementById('fileInput'),
             apiKeyInput: document.getElementById('apiKey'),
             startButton: document.getElementById('startButton'),
@@ -51,6 +52,13 @@ export default class UIController {
 
         // Make sure results div is hidden initially
         this.elements.resultsDiv.style.display = 'none';
+
+        // Set up message element styling
+        if (this.elements.urlListMsg) {
+            this.elements.urlListMsg.style.marginLeft = '10px';
+            this.elements.urlListMsg.style.display = 'inline-block';
+            this.elements.urlListMsg.style.transition = 'opacity 0.5s ease-in-out';
+        }
     }
 
     /**
@@ -64,7 +72,7 @@ export default class UIController {
                 const apiKey = this.elements.apiKeyInput.value.trim();
 
                 if (!urlText) {
-                    this.showAlert('Please enter URLs or upload a file.');
+                    this.showMessage('Please enter URLs or upload a file.', 'error');
                     return;
                 }
 
@@ -101,11 +109,13 @@ export default class UIController {
             e.preventDefault();
             textarea.style.borderColor = '#4CAF50';
             textarea.style.backgroundColor = 'rgba(76, 175, 80, 0.1)';
+            this.showMessage('Drop file to upload', 'info');
         });
 
         textarea.addEventListener('dragleave', () => {
             textarea.style.borderColor = '';
             textarea.style.backgroundColor = '';
+            this.clearMessage();
         });
 
         textarea.addEventListener('drop', (e) => {
@@ -120,6 +130,7 @@ export default class UIController {
             if (!files || files.length === 0) return;
 
             const file = files[0];
+            this.showMessage(`Processing file: ${file.name}`, 'info');
 
             // Process the dropped file if we have a callback
             if (typeof this.callbacks.onFileUpload === 'function') {
@@ -149,6 +160,7 @@ export default class UIController {
                 if (!files || files.length === 0) return;
 
                 const file = files[0];
+                this.showMessage(`Processing file: ${file.name}`, 'info');
 
                 // Process the dropped file if we have a callback
                 if (typeof this.callbacks.onFileUpload === 'function') {
@@ -191,11 +203,89 @@ export default class UIController {
     }
 
     /**
-     * Shows an alert to the user
+     * Shows a message in the urlListMsg element
+     * @param {string} message - Message to display
+     * @param {string} type - Type of message (success, error, info, warning)
+     * @param {number} autoHideTimeout - Optional time in ms to auto-hide the message
+     */
+    showMessage(message, type = 'info', autoHideTimeout = 0) {
+        if (!this.elements.urlListMsg) {
+            // Fallback to alert if message element doesn't exist
+            alert(message);
+            return;
+        }
+
+        // Clear any existing timeouts
+        if (this._messageTimeoutId) {
+            clearTimeout(this._messageTimeoutId);
+            this._messageTimeoutId = null;
+        }
+
+        // Set message text and style
+        this.elements.urlListMsg.textContent = message;
+        this.elements.urlListMsg.style.opacity = '1';
+
+        // Remove any existing classes
+        this.elements.urlListMsg.classList.remove('message-success', 'message-error', 'message-info', 'message-warning');
+
+        // Set color based on message type
+        switch (type) {
+            case 'success':
+                this.elements.urlListMsg.style.color = '#4CAF50';
+                this.elements.urlListMsg.classList.add('message-success');
+                break;
+            case 'error':
+                this.elements.urlListMsg.style.color = '#F44336';
+                this.elements.urlListMsg.classList.add('message-error');
+                break;
+            case 'warning':
+                this.elements.urlListMsg.style.color = '#FF9800';
+                this.elements.urlListMsg.classList.add('message-warning');
+                break;
+            case 'info':
+            default:
+                this.elements.urlListMsg.style.color = '#2196F3';
+                this.elements.urlListMsg.classList.add('message-info');
+                break;
+        }
+
+        // Auto-hide if specified
+        if (autoHideTimeout > 0) {
+            this._messageTimeoutId = setTimeout(() => {
+                this.clearMessage();
+            }, autoHideTimeout);
+        }
+
+        // Log to console as well
+        console.log(`[${type.toUpperCase()}] ${message}`);
+    }
+
+    /**
+     * Clears the message display
+     */
+    clearMessage() {
+        if (!this.elements.urlListMsg) return;
+
+        this.elements.urlListMsg.style.opacity = '0';
+
+        // Clear any existing timeouts
+        if (this._messageTimeoutId) {
+            clearTimeout(this._messageTimeoutId);
+            this._messageTimeoutId = null;
+        }
+    }
+
+    /**
+     * Shows an alert or message to the user
      * @param {string} message - Message to display
      */
     showAlert(message) {
-        alert(message);
+        // Use the message display if possible, otherwise fall back to alert
+        if (this.elements.urlListMsg) {
+            this.showMessage(message, 'error', 5000);
+        } else {
+            alert(message);
+        }
     }
 
     /**
@@ -275,6 +365,9 @@ export default class UIController {
         this.elements.progressBar.style.width = '0%';
         this.elements.progressBar.textContent = '0%';
         this.elements.etaDisplay.textContent = '';
+
+        // Clear any messages
+        this.clearMessage();
     }
 
     /**
@@ -307,7 +400,6 @@ export default class UIController {
         if (validPercentage > 0 || (this.statusTracker && this.statusTracker.isRunning)) {
             this.elements.progressContainer.style.display = 'block';
         }
-
 
         console.log(`Update progress bar: ${validPercentage}%`);
     }
@@ -489,7 +581,7 @@ export default class UIController {
 
                         if (line.includes('https://web.archive.org/')) {
                             // This line contains a URL - make it clickable
-                            const urlMatch = line.match(/(https:\/\/web\.archive\.org\/[^\s]+)/);
+                            const urlMatch = line.match(/(https:\/\/web\.archive\.org\/\S+)/);
                             if (urlMatch) {
                                 const url = urlMatch[1];
                                 const beforeUrl = line.substring(0, line.indexOf(url));
