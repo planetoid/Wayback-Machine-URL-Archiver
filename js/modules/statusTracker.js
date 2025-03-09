@@ -72,6 +72,7 @@ export default class StatusTracker {
         
         // Log progress for debugging
         console.log(`Progress update: ${progress}%, processed ${this.processedCount}/${this.urls.length}`);
+        return progress;
     }
     
     /**
@@ -80,7 +81,9 @@ export default class StatusTracker {
      */
     getProgressPercentage() {
         if (!this.urls.length) return 0;
-        return Math.round((this.processedCount / this.urls.length) * 100);
+        const percentage = Math.round((this.processedCount / this.urls.length) * 100);
+        // Ensure it's between 0-100
+        return Math.max(0, Math.min(100, percentage));
     }
     
     /**

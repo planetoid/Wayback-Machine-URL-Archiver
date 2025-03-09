@@ -26,6 +26,9 @@ export default class UIController {
             onFileUpload: null
         };
         
+        // Status tracker reference
+        this.statusTracker = null;
+        
         // Initialize UI state
         this.initUI();
         
@@ -208,15 +211,29 @@ export default class UIController {
      * @param {number} percentage - Progress percentage (0-100)
      */
     updateProgress(percentage) {
-        // Ensure the progress bar percentage is a valid value
-        const validPercentage = Math.max(0, Math.min(100, percentage));
+        // Make sure we have a numeric value
+        let validPercentage = Number(percentage);
+        
+        // Handle NaN or invalid values
+        if (isNaN(validPercentage)) {
+            console.error('Invalid percentage value:', percentage);
+            validPercentage = 0;
+        }
+        
+        // Ensure the progress bar percentage is a valid value between 0 and 100
+        validPercentage = Math.max(0, Math.min(100, validPercentage));
+        
+        // Round to ensure we have a clean integer
+        validPercentage = Math.round(validPercentage);
     
-        // Update progress bar
+        // Force DOM update for the progress bar width
         this.elements.progressBar.style.width = `${validPercentage}%`;
+        
+        // Update the text content
         this.elements.progressBar.textContent = `${validPercentage}%`;
     
         // Ensure progress bar container is visible when there's actual progress to show
-        if (validPercentage > 0 || this.statusTracker?.isRunning) {
+        if (validPercentage > 0 || (this.statusTracker && this.statusTracker.isRunning)) {
             this.elements.progressContainer.style.display = 'block';
         }
 
@@ -229,6 +246,11 @@ export default class UIController {
      * @param {number} timeRemaining - Estimated time remaining in milliseconds
      */
     updateEta(timeRemaining) {
+        if (!this.elements.etaDisplay) {
+            console.error("ETA display element not found");
+            return;
+        }
+        
         if (timeRemaining > 0) {
             const minutes = Math.floor(timeRemaining / 60000);
             const seconds = Math.floor((timeRemaining % 60000) / 1000);
@@ -357,7 +379,7 @@ export default class UIController {
         statusCell.innerHTML = '';
         statusCell.appendChild(statusLabel);
     
-        // 如果狀態是 "Archived" 且有提供 archiveUrl，直接更新 "View Archive" 欄位
+        // Update "View Archive" cell if we have an archive URL
         if (type === 'success' && statusText === 'Archived' && archiveUrl) {
             const viewCell = existingRow.children[3];
             viewCell.innerHTML = '';
